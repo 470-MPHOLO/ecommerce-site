@@ -83,24 +83,47 @@ function getProductById(id) {
     return products.find(product => product.id === id);
 }
 
-// Function to add a new product
+
+// Function to add a new product - FIXED VERSION
 function addProduct(product) {
     try {
+        console.log('=== ADD PRODUCT START ===');
+        console.log('Product to add:', product);
+        
+        // Load fresh products
+        let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+        
         // Generate a new ID
-        const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+        let newId = 1;
+        if (products.length > 0) {
+            const maxId = Math.max(...products.map(p => p.id));
+            newId = maxId + 1;
+        }
+        
         product.id = newId;
         product.dateAdded = new Date().toISOString();
         product.stock = product.stock || 1;
         
-        // Validate Google Drive URL
-        if (!product.image.includes('drive.google.com')) {
-            alert('Error: Image must be a Google Drive link');
+        console.log('Generated ID:', newId);
+        
+        // Add to array
+        products.push(product);
+        
+        // Save to localStorage
+        try {
+            localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+            console.log('✅ Product added successfully');
+            console.log('Total products now:', products.length);
+            console.log('=== ADD PRODUCT END ===');
+            return newId;
+        } catch (saveError) {
+            console.error('Save error:', saveError);
+            if (saveError.name === 'QuotaExceededError') {
+                alert('Storage full! Please delete some products.');
+            }
             return null;
         }
         
-        products.push(product);
-        saveProducts();
-        return newId;
     } catch (e) {
         console.error('Error adding product:', e);
         alert('Error adding product: ' + e.message);
@@ -108,46 +131,72 @@ function addProduct(product) {
     }
 }
 
-// Function to update a product
+
+
+// Function to update a product - FIXED VERSION
 function updateProduct(id, updatedProduct) {
     try {
-        console.log('Updating product ID:', id);
+        console.log('=== UPDATE PRODUCT START ===');
+        console.log('Product ID to update:', id);
+        console.log('Updated product data:', updatedProduct);
+        
+        // Load fresh products from localStorage
+        let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+        console.log('Current products in storage:', products.length);
         
         const index = products.findIndex(p => p.id === id);
+        console.log('Found at index:', index);
         
-        if (index !== -1) {
-            // Preserve original dateAdded if not provided
-            if (!updatedProduct.dateAdded) {
-                updatedProduct.dateAdded = products[index].dateAdded;
-            }
-            
-            // Keep original ID
-            updatedProduct.id = id;
-            
-            // Validate Google Drive URL
-            if (!updatedProduct.image.includes('drive.google.com')) {
-                alert('Error: Image must be a Google Drive link');
-                return false;
-            }
-            
-            products[index] = { ...products[index], ...updatedProduct };
-            console.log('Product updated successfully:', products[index].name);
-            
-            const saveResult = saveProducts();
-            console.log('Save result:', saveResult);
-            
-            return saveResult;
-        } else {
+        if (index === -1) {
             console.error('Product not found with ID:', id);
-            alert('Error: Product not found');
             return false;
         }
-    } catch (e) {
-        console.error('Update error:', e);
-        alert('Error updating product: ' + e.message);
+        
+        // Preserve original dateAdded if not provided
+        if (!updatedProduct.dateAdded) {
+            updatedProduct.dateAdded = products[index].dateAdded;
+        }
+        
+        // Keep original ID
+        updatedProduct.id = id;
+        
+        console.log('Original product:', products[index]);
+        console.log('Updated product:', updatedProduct);
+        
+        // Update the product
+        products[index] = { ...products[index], ...updatedProduct };
+        
+        console.log('Product after update:', products[index]);
+        
+        // Save to localStorage
+        try {
+            localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+            console.log('✅ Products saved successfully');
+            console.log('=== UPDATE PRODUCT END ===');
+            return true;
+        } catch (saveError) {
+            console.error('Save error:', saveError);
+            if (saveError.name === 'QuotaExceededError') {
+                alert('Storage full! Please delete some products.');
+            }
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('Update error:', error);
+        alert('Update error: ' + error.message);
         return false;
     }
 }
+
+
+
+
+
+
+
+
+        
 
 // Function to delete a product
 function deleteProduct(id) {
