@@ -81,106 +81,62 @@
             <form id="product-form">
                 <input type="hidden" id="product-id">
                 
-                <!-- Product Image Upload -->
+                <!-- Product Image Upload - Google Drive Only -->
                 <div class="form-section">
-                    <h3><i class="fas fa-image"></i> Product Image</h3>
+                    <h3><i class="fas fa-image"></i> Product Image (Google Drive)</h3>
                     
-                    <!-- Upload Method Tabs -->
-                    <div class="upload-method-tabs">
-                        <button type="button" class="method-tab active" data-method="upload">
-                            <i class="fas fa-upload"></i> Upload Image
-                        </button>
-                        <button type="button" class="method-tab" data-method="drive">
-                            <i class="fab fa-google-drive"></i> Google Drive
-                        </button>
-                    </div>
-                    
-                    <!-- Upload Method Content -->
-                    <div class="upload-method-content">
+                    <div class="drive-instructions">
+                        <div class="instruction-card">
+                            <h4><i class="fab fa-google-drive"></i> How to Add Images</h4>
+                            <ol>
+                                <li>Upload image to <a href="https://drive.google.com" target="_blank">Google Drive</a></li>
+                                <li>Right-click file → <strong>"Get link"</strong></li>
+                                <li>Set to <strong>"Anyone with the link"</strong> → Copy link</li>
+                                <li>Paste below → Click <strong>"Convert & Preview"</strong></li>
+                            </ol>
+                        </div>
                         
-                        <!-- Method 1: Direct Upload -->
-                        <div id="upload-method" class="method-content active">
-                            <div class="image-upload-container">
-                                <div class="upload-area" id="upload-area">
-                                    <div class="upload-icon">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                    </div>
-                                    <p class="upload-title">Upload Product Photo</p>
-                                    <p class="upload-subtitle">Drag & drop or click to browse</p>
-                                    <input type="file" id="image-file" accept="image/*" capture="environment">
-                                    <button type="button" id="browse-btn" class="btn-secondary">
-                                        <i class="fas fa-folder-open"></i> Choose File
+                        <div class="drive-input-section">
+                            <div class="form-group">
+                                <label for="drive-link">
+                                    <i class="fas fa-link"></i> Google Drive Link *
+                                </label>
+                                <div class="drive-input-group">
+                                    <input type="url" id="drive-link" 
+                                           placeholder="https://drive.google.com/file/d/.../view"
+                                           class="drive-url-input" required>
+                                    <button type="button" id="convert-drive-btn" class="btn-primary">
+                                        <i class="fas fa-exchange-alt"></i> Convert & Preview
                                     </button>
-                                    <p class="upload-info">Max: 2MB • JPG, PNG, GIF</p>
                                 </div>
-                                <div class="image-preview-container" id="image-preview-container">
-                                    <div class="preview-header">
-                                        <h4>Image Preview</h4>
-                                        <button type="button" id="change-image" class="btn-small">
-                                            <i class="fas fa-sync-alt"></i> Change
-                                        </button>
-                                    </div>
-                                    <img id="uploaded-preview" class="preview-image">
-                                    <div class="preview-actions">
-                                        <button type="button" id="remove-image" class="btn-delete">
-                                            <i class="fas fa-trash"></i> Remove Image
-                                        </button>
-                                    </div>
-                                </div>
+                                <small class="drive-example">
+                                    Example: <code>https://drive.google.com/file/d/abc123xyz/view</code>
+                                </small>
                             </div>
-                        </div>
-                        
-                        <!-- Method 2: Google Drive -->
-                        <div id="drive-method" class="method-content">
-                            <div class="drive-instructions">
-                                <div class="instruction-card">
-                                    <h4><i class="fab fa-google-drive"></i> Google Drive Instructions</h4>
-                                    <ol>
-                                        <li>Upload image to <a href="https://drive.google.com" target="_blank">Google Drive</a></li>
-                                        <li>Right-click file → <strong>"Get link"</strong></li>
-                                        <li>Set to <strong>"Anyone with the link"</strong> → Copy link</li>
-                                        <li>Paste below and click <strong>"Convert & Preview"</strong></li>
-                                    </ol>
+                            
+                            <div class="drive-status" id="drive-status"></div>
+                            
+                            <div class="drive-preview-container" id="drive-preview-container">
+                                <div class="preview-header">
+                                    <h4>Image Preview</h4>
+                                    <span class="drive-badge">
+                                        <i class="fab fa-google-drive"></i> Google Drive
+                                    </span>
                                 </div>
-                                
-                                <div class="drive-input-section">
-                                    <div class="form-group">
-                                        <label for="drive-link">
-                                            <i class="fas fa-link"></i> Google Drive Link
-                                        </label>
-                                        <div class="drive-input-group">
-                                            <input type="url" id="drive-link" 
-                                                   placeholder="https://drive.google.com/file/d/.../view"
-                                                   class="drive-url-input">
-                                            <button type="button" id="convert-drive-btn" class="btn-primary">
-                                                <i class="fas fa-exchange-alt"></i> Convert & Preview
-                                            </button>
-                                        </div>
-                                        <small class="drive-example">
-                                            Example: <code>https://drive.google.com/file/d/abc123/view</code>
-                                        </small>
-                                    </div>
-                                    
-                                    <div class="drive-status" id="drive-status"></div>
-                                    
-                                    <div class="drive-preview-container" id="drive-preview-container">
-                                        <div class="preview-header">
-                                            <h4>Google Drive Preview</h4>
-                                            <span class="drive-badge">
-                                                <i class="fab fa-google-drive"></i> Google Drive
-                                            </span>
-                                        </div>
-                                        <img id="drive-preview-image" class="preview-image">
-                                        <div class="preview-info">
-                                            <p><i class="fas fa-check-circle"></i> Image loaded from Google Drive</p>
-                                        </div>
-                                    </div>
+                                <img id="drive-preview-image" class="preview-image">
+                                <div class="preview-actions">
+                                    <button type="button" id="change-image" class="btn-secondary">
+                                        <i class="fas fa-sync-alt"></i> Change Image
+                                    </button>
+                                    <button type="button" id="remove-image" class="btn-delete">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <input type="hidden" id="product-image-data">
+                    <input type="hidden" id="product-image-data" required>
                 </div>
                 
                 <!-- Product Details -->
