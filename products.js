@@ -1,26 +1,5 @@
-// Products data with Google Drive support
-let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [
-    {
-        id: 1,
-        name: "Wireless Bluetooth Headphones",
-        description: "Noise cancelling over-ear headphones with 30hr battery life. Perfect for music lovers and professionals.",
-        price: 1499.99,
-        category: "electronics",
-        stock: 10,
-        image: "https://drive.google.com/uc?id=1RDUyeQ3tI6QmGCHyVt7I4y-2kHwJ8p7T", // Example Google Drive URL
-        dateAdded: "2023-01-01"
-    },
-    {
-        id: 2,
-        name: "Smart Watch Series 5",
-        description: "Fitness tracker with heart rate monitor, GPS, and sleep tracking. Water resistant up to 50m.",
-        price: 2999.99,
-        category: "electronics",
-        stock: 5,
-        image: "https://drive.google.com/uc?id=1sKj9l3mNpOqR8tUvWxYz2AbC3De4F5G6", // Example Google Drive URL
-        dateAdded: "2023-01-02"
-    }
-];
+// Products data - Google Drive URLs only
+let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
 
 // Function to save products to localStorage
 function saveProducts() {
@@ -31,7 +10,7 @@ function saveProducts() {
     } catch (e) {
         console.error('Error saving products:', e);
         if (e.name === 'QuotaExceededError') {
-            alert('Storage limit reached! Please delete some products or use Google Drive for images.');
+            alert('Storage limit reached! Please delete some products.');
         }
         return false;
     }
@@ -61,30 +40,16 @@ function loadProducts() {
         productCard.setAttribute('data-category', product.category);
         productCard.setAttribute('data-id', product.id);
         
-        // Handle both Base64 and Google Drive URLs
-        let imageSrc = product.image || '';
-        
-        // Check image type
-        const isBase64 = imageSrc.startsWith('data:image');
-        const isGoogleDrive = imageSrc.includes('drive.google.com');
-        
-        // Fallback image for errors
+        // Fallback image for Google Drive errors
         const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmNWY1ZjUiLz48cmVjdCB4PSI1MCIgeT0iMzAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTQwIiByeD0iMTAiIGZpbGw9IiNlMGUwZTAiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjEwMCIgcj0iMzAiIGZpbGw9IiNjY2MiLz48cmVjdCB4PSIyMDAiIHk9IjgwIiB3aWR0aD0iNTAiIGhlaWdodD0iNDAiIHJ4PSI1IiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iMTUwIiB5PSIxNzAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+UHJvZHVjdCBJbWFnZTwvdGV4dD48L3N2Zz4=';
-        
-        // Add loading attribute for better performance
-        const loadingAttr = isGoogleDrive ? 'loading="lazy"' : '';
         
         productCard.innerHTML = `
             <div class="product-image">
-                <img src="${imageSrc}" alt="${product.name}" 
-                     ${loadingAttr}
-                     onerror="
-                        if (this.src !== '${fallbackImage}') {
-                            this.src = '${fallbackImage}';
-                        }
-                     ">
+                <img src="${product.image}" alt="${product.name}" 
+                     loading="lazy"
+                     onerror="this.src='${fallbackImage}'; this.onerror=null;">
                 ${(product.stock || 0) <= 0 ? '<div class="out-of-stock">Out of Stock</div>' : ''}
-                ${isGoogleDrive ? '<div class="drive-hosted"><i class="fab fa-google-drive"></i></div>' : ''}
+                <div class="drive-hosted"><i class="fab fa-google-drive"></i></div>
             </div>
             <div class="product-info">
                 <h3 class="product-title">${product.name}</h3>
@@ -127,11 +92,18 @@ function addProduct(product) {
         product.dateAdded = new Date().toISOString();
         product.stock = product.stock || 1;
         
+        // Validate Google Drive URL
+        if (!product.image.includes('drive.google.com')) {
+            alert('Error: Image must be a Google Drive link');
+            return null;
+        }
+        
         products.push(product);
         saveProducts();
         return newId;
     } catch (e) {
         console.error('Error adding product:', e);
+        alert('Error adding product: ' + e.message);
         return null;
     }
 }
@@ -139,7 +111,7 @@ function addProduct(product) {
 // Function to update a product
 function updateProduct(id, updatedProduct) {
     try {
-        console.log('Attempting to update product ID:', id);
+        console.log('Updating product ID:', id);
         
         const index = products.findIndex(p => p.id === id);
         
@@ -152,6 +124,12 @@ function updateProduct(id, updatedProduct) {
             // Keep original ID
             updatedProduct.id = id;
             
+            // Validate Google Drive URL
+            if (!updatedProduct.image.includes('drive.google.com')) {
+                alert('Error: Image must be a Google Drive link');
+                return false;
+            }
+            
             products[index] = { ...products[index], ...updatedProduct };
             console.log('Product updated successfully:', products[index].name);
             
@@ -161,10 +139,12 @@ function updateProduct(id, updatedProduct) {
             return saveResult;
         } else {
             console.error('Product not found with ID:', id);
+            alert('Error: Product not found');
             return false;
         }
     } catch (e) {
         console.error('Update error:', e);
+        alert('Error updating product: ' + e.message);
         return false;
     }
 }
