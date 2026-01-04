@@ -1,82 +1,55 @@
-// Products data - in a real app, this would come from a backend API
+// Products data with Base64 image support
 let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [
     {
         id: 1,
         name: "Wireless Bluetooth Headphones",
-        description: "Noise cancelling over-ear headphones with 30hr battery life",
+        description: "Noise cancelling over-ear headphones with 30hr battery life. Perfect for music lovers and professionals.",
         price: 1499.99,
         category: "electronics",
-        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+        stock: 10,
+        image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSI4MCIgcj0iNDAiIGZpbGw9IiM0Mjg1ZjQiLz48cmVjdCB4PSI2MCIgeT0iMTIwIiB3aWR0aD0iODAiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iIzQyODVmNCIvPjwvc3ZnPg==",
+        dateAdded: "2023-01-01"
     },
     {
         id: 2,
         name: "Smart Watch Series 5",
-        description: "Fitness tracker with heart rate monitor and GPS",
+        description: "Fitness tracker with heart rate monitor, GPS, and sleep tracking. Water resistant up to 50m.",
         price: 2999.99,
         category: "electronics",
-        image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-    },
-    {
-        id: 3,
-        name: "Cotton T-Shirt",
-        description: "Premium quality cotton t-shirt in various colors",
-        price: 299.99,
-        category: "fashion",
-        image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-    },
-    {
-        id: 4,
-        name: "Ceramic Coffee Mug Set",
-        description: "Set of 4 ceramic mugs with elegant design",
-        price: 399.99,
-        category: "home",
-        image: "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-    },
-    {
-        id: 5,
-        name: "Best-Selling Novel",
-        description: "Award-winning fiction novel by popular author",
-        price: 199.99,
-        category: "books",
-        image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-    },
-    {
-        id: 6,
-        name: "Yoga Mat",
-        description: "Non-slip yoga mat with carrying strap",
-        price: 599.99,
-        category: "sports",
-        image: "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-    },
-    {
-        id: 7,
-        name: "Laptop Backpack",
-        description: "Water-resistant backpack with laptop compartment",
-        price: 899.99,
-        category: "fashion",
-        image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
-    },
-    {
-        id: 8,
-        name: "Air Fryer",
-        description: "Digital air fryer with multiple cooking functions",
-        price: 1499.99,
-        category: "home",
-        image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+        stock: 5,
+        image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjUwIiBmaWxsPSIjMzQ5ODdiIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSI0MCIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==",
+        dateAdded: "2023-01-02"
     }
 ];
 
 // Function to save products to localStorage
 function saveProducts() {
-    localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+    try {
+        localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+        return true;
+    } catch (e) {
+        console.error('Error saving products:', e);
+        return false;
+    }
 }
 
-// Function to load and display products
+// Function to load and display products on main page
 function loadProducts() {
     const productGrid = document.getElementById('product-grid');
     if (!productGrid) return;
     
     productGrid.innerHTML = '';
+    
+    if (products.length === 0) {
+        productGrid.innerHTML = `
+            <div class="empty-products">
+                <i class="fas fa-box-open"></i>
+                <h3>No Products Available</h3>
+                <p>Check back soon for new products!</p>
+            </div>
+        `;
+        return;
+    }
     
     products.forEach(product => {
         const productCard = document.createElement('div');
@@ -84,16 +57,32 @@ function loadProducts() {
         productCard.setAttribute('data-category', product.category);
         productCard.setAttribute('data-id', product.id);
         
+        // Handle image (Base64 or URL)
+        let imageSrc = product.image;
+        if (!imageSrc.startsWith('data:image') && !imageSrc.startsWith('http')) {
+            // Fallback placeholder
+            imageSrc = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48cGF0aCBkPSJNNzUgODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSAxODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSA4NVpNMTc1IDVIMjVWMjBIMTc1VjVaIiBmaWxsPSIjY2NjIi8+PC9zdmc+';
+        }
+        
+        // Check stock status
+        const stock = product.stock || 0;
+        const outOfStock = stock <= 0;
+        
         productCard.innerHTML = `
             <div class="product-image">
-                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'">
+                <img src="${imageSrc}" alt="${product.name}" 
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48cGF0aCBkPSJNNzUgODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSAxODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSA4NVpNMTc1IDVIMjVWMjBIMTc1VjVaIiBmaWxsPSIjY2NjIi8+PC9zdmc+'">
+                ${outOfStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
             </div>
             <div class="product-info">
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
                 <div class="product-price">R${product.price.toFixed(2)}</div>
-                <button class="add-to-cart" data-id="${product.id}">
-                    <i class="fas fa-cart-plus"></i> Add to Cart
+                <div class="product-stock-badge">
+                    <i class="fas fa-box"></i> ${stock} in stock
+                </div>
+                <button class="add-to-cart" data-id="${product.id}" ${outOfStock ? 'disabled' : ''}>
+                    ${outOfStock ? '<i class="fas fa-ban"></i> Out of Stock' : '<i class="fas fa-cart-plus"></i> Add to Cart'}
                 </button>
             </div>
         `;
@@ -102,7 +91,7 @@ function loadProducts() {
     });
     
     // Add event listeners to add-to-cart buttons
-    document.querySelectorAll('.add-to-cart').forEach(button => {
+    document.querySelectorAll('.add-to-cart:not([disabled])').forEach(button => {
         button.addEventListener('click', function() {
             const productId = parseInt(this.getAttribute('data-id'));
             addToCart(productId);
@@ -115,20 +104,33 @@ function getProductById(id) {
     return products.find(product => product.id === id);
 }
 
-// Function to add a new product (for admin)
+// Function to add a new product
 function addProduct(product) {
-    // Generate a new ID
-    const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-    product.id = newId;
-    products.push(product);
-    saveProducts();
-    return newId;
+    try {
+        // Generate a new ID
+        const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+        product.id = newId;
+        product.dateAdded = new Date().toISOString();
+        product.stock = product.stock || 1;
+        
+        products.push(product);
+        saveProducts();
+        return newId;
+    } catch (e) {
+        console.error('Error adding product:', e);
+        return null;
+    }
 }
 
 // Function to update a product
 function updateProduct(id, updatedProduct) {
     const index = products.findIndex(p => p.id === id);
     if (index !== -1) {
+        // Preserve original dateAdded if not provided
+        if (!updatedProduct.dateAdded) {
+            updatedProduct.dateAdded = products[index].dateAdded;
+        }
+        
         products[index] = { ...products[index], ...updatedProduct };
         saveProducts();
         return true;
@@ -145,4 +147,20 @@ function deleteProduct(id) {
         return true;
     }
     return false;
+}
+
+// Function to get all products by category
+function getProductsByCategory(category) {
+    if (category === 'all') return products;
+    return products.filter(product => product.category === category);
+}
+
+// Function to search products
+function searchProducts(query) {
+    const searchTerm = query.toLowerCase();
+    return products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) ||
+        product.description.toLowerCase().includes(searchTerm) ||
+        product.category.toLowerCase().includes(searchTerm)
+    );
 }
