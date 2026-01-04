@@ -1,0 +1,43 @@
+
+## Admin Access
+
+1. Click the gear icon (bottom-right corner) on the main page
+2. Enter password: `admin123`
+3. You will be redirected to the admin panel
+
+## Adding Products (Admin)
+
+1. Access admin panel
+2. Click "Add New Product"
+3. Fill in product details (name, description, price, category, image URL)
+4. Click "Save Product"
+
+## Deployment
+
+This website can be hosted on any static hosting service:
+
+### Free Hosting Options:
+- **GitHub Pages**: Upload to a GitHub repository and enable Pages
+- **Netlify**: Drag and drop the folder to Netlify
+- **Vercel**: Connect GitHub repository
+
+### Security Considerations for Production:
+1. Change the default admin password in both `index.html` and `admin.js`
+2. Consider adding more robust authentication for admin panel
+3. Implement backend API for data storage (current version uses localStorage)
+4. Add HTTPS for secure connections
+
+## Customization
+
+- Change colors in CSS files
+- Update contact information in `index.html`
+- Modify product categories in `products.js` and admin panel
+- Replace logo and branding
+
+## Browser Compatibility
+
+Tested on modern browsers (Chrome, Firefox, Safari, Edge)
+
+## License
+
+Free to use and modify for personal or commercial projects.
