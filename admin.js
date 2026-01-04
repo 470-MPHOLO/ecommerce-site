@@ -433,8 +433,6 @@ function loadProductData(productId) {
     }
 }
 
-
-
 function handleProductSubmit(e) {
     e.preventDefault();
     
@@ -474,10 +472,10 @@ function handleProductSubmit(e) {
             return;
         }
         
-        if (!imageData) {
-            alert('Please add a product image from Google Drive');
-            return;
-        }
+        if (!imageData || !imageData.includes('drive.google.com')) {
+    alert('Please add a valid Google Drive image link.');
+    return;
+}
         
         // Debug log
         console.log('Submitting product data:', {
