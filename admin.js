@@ -1,4 +1,4 @@
-// Admin JavaScript with Google Drive Integration ONLY
+// Admin JavaScript with Google Drive Integration
 console.log("=== ADMIN.JS LOADED ===");
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -16,7 +16,7 @@ function checkAdminAuth() {
         const authSubmit = document.getElementById('auth-submit');
         const authPassword = document.getElementById('auth-password');
         const authError = document.getElementById('auth-error');
-        const ADMIN_PASSWORD = 'admin123'; // Change this for production
+        const ADMIN_PASSWORD = 'admin123';
         
         authSubmit.addEventListener('click', function() {
             if (authPassword.value === ADMIN_PASSWORD) {
@@ -29,9 +29,7 @@ function checkAdminAuth() {
         });
         
         authPassword.addEventListener('keyup', function(e) {
-            if (e.key === 'Enter') {
-                authSubmit.click();
-            }
+            if (e.key === 'Enter') authSubmit.click();
         });
     } else {
         authCheck.style.display = 'none';
@@ -41,68 +39,60 @@ function checkAdminAuth() {
 
 function initAdminPanel() {
     console.log("🟢 Initializing admin panel");
-    
-    // Load products
     loadAdminProducts();
-    
-    // Setup event listeners - SIMPLIFIED VERSION
     setupEventListeners();
-    
-    // Setup Google Drive upload
     setupGoogleDriveUpload();
-    
-    console.log("✅ Admin panel initialized");
 }
 
 function setupEventListeners() {
-    console.log("🟢 Setting up event listeners");
-    
     // Logout button
     document.getElementById('logout-admin')?.addEventListener('click', function() {
         localStorage.removeItem('adminAuthenticated');
         window.location.href = 'index.html';
     });
     
-    // Add product buttons - FIXED: Prevent passing event object
+    // Add product buttons - FIXED
     document.getElementById('add-product-btn')?.addEventListener('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         console.log("🟢 Add Product button clicked");
-        openProductModal();
+        openProductModal(null); // Explicitly pass null
     });
     
     document.getElementById('add-first-product')?.addEventListener('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         console.log("🟢 Add First Product button clicked");
-        openProductModal();
+        openProductModal(null); // Explicitly pass null
     });
     
     // Modal close buttons
-    document.querySelector('.close-modal')?.addEventListener('click', closeProductModal);
-    document.querySelector('.close-modal-btn')?.addEventListener('click', closeProductModal);
+    document.querySelector('.close-modal')?.addEventListener('click', function() {
+        document.getElementById('product-modal').style.display = 'none';
+        resetProductForm();
+    });
+    
+    document.querySelector('.close-modal-btn')?.addEventListener('click', function() {
+        document.getElementById('product-modal').style.display = 'none';
+        resetProductForm();
+    });
     
     // Close modals when clicking outside
     window.addEventListener('click', function(e) {
         if (e.target === document.getElementById('product-modal')) {
-            closeProductModal();
+            document.getElementById('product-modal').style.display = 'none';
+            resetProductForm();
         }
         if (e.target === document.getElementById('delete-modal')) {
             document.getElementById('delete-modal').style.display = 'none';
         }
     });
     
-    // Product form submission
+    // Form submission
     const productForm = document.getElementById('product-form');
     if (productForm) {
-        console.log("✅ Product form found");
         productForm.addEventListener('submit', handleProductSubmit);
     }
-    
-    // Direct save button as backup
-    document.getElementById('save-product-btn')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        console.log("🎯 Save button clicked (direct)");
-        handleProductSubmit(e);
-    });
     
     // Delete modal buttons
     document.getElementById('cancel-delete')?.addEventListener('click', function() {
@@ -110,30 +100,21 @@ function setupEventListeners() {
     });
     
     document.getElementById('confirm-delete')?.addEventListener('click', function() {
-        const productId = parseInt(this.getAttribute('data-product-id'));
+        const productId = this.getAttribute('data-product-id');
         if (productId) {
-            deleteProduct(productId);
+            deleteProduct(parseInt(productId));
             document.getElementById('delete-modal').style.display = 'none';
         }
     });
 }
 
 function setupGoogleDriveUpload() {
-    console.log("🟢 Setting up Google Drive upload");
-    
     // Google Drive conversion
-    const convertDriveBtn = document.getElementById('convert-drive-btn');
-    const driveLinkInput = document.getElementById('drive-link');
+    document.getElementById('convert-drive-btn')?.addEventListener('click', convertGoogleDriveUrl);
     
-    if (convertDriveBtn) {
-        convertDriveBtn.addEventListener('click', convertGoogleDriveUrl);
-    }
-    
-    if (driveLinkInput) {
-        driveLinkInput.addEventListener('keyup', function(e) {
-            if (e.key === 'Enter') convertGoogleDriveUrl();
-        });
-    }
+    document.getElementById('drive-link')?.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') convertGoogleDriveUrl();
+    });
     
     // Change/Remove image buttons
     document.getElementById('change-image')?.addEventListener('click', resetImageForm);
@@ -141,14 +122,21 @@ function setupGoogleDriveUpload() {
 }
 
 function resetImageForm() {
-    document.getElementById('drive-preview-container').style.display = 'none';
-    document.getElementById('product-image-data').value = '';
-    document.getElementById('drive-status').style.display = 'none';
-    document.getElementById('drive-link').value = '';
+    const elements = {
+        preview: document.getElementById('drive-preview-container'),
+        data: document.getElementById('product-image-data'),
+        status: document.getElementById('drive-status'),
+        link: document.getElementById('drive-link')
+    };
+    
+    if (elements.preview) elements.preview.style.display = 'none';
+    if (elements.data) elements.data.value = '';
+    if (elements.status) elements.status.style.display = 'none';
+    if (elements.link) elements.link.value = '';
 }
 
 function convertGoogleDriveUrl() {
-    const driveLink = document.getElementById('drive-link').value.trim();
+    const driveLink = document.getElementById('drive-link')?.value.trim();
     const driveStatus = document.getElementById('drive-status');
     const drivePreviewContainer = document.getElementById('drive-preview-container');
     const drivePreviewImage = document.getElementById('drive-preview-image');
@@ -159,26 +147,25 @@ function convertGoogleDriveUrl() {
         return;
     }
     
-    showDriveStatus('Converting Google Drive link...', 'loading');
+    showDriveStatus('Converting...', 'loading');
     
     // Extract file ID
-    let fileId = extractGoogleDriveFileId(driveLink);
+    const fileId = extractGoogleDriveFileId(driveLink);
     
     if (!fileId) {
-        showDriveStatus('Could not extract file ID. Use format: https://drive.google.com/file/d/FILE_ID/view', 'error');
+        showDriveStatus('Invalid link format. Use: https://drive.google.com/file/d/FILE_ID/view', 'error');
         return;
     }
     
     // Create direct image URL
     const directImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-    console.log('Direct Image URL:', directImageUrl);
     
-    // Save the URL immediately
-    imageDataInput.value = directImageUrl;
-    drivePreviewImage.src = directImageUrl;
-    drivePreviewContainer.style.display = 'block';
+    // Save and display
+    if (imageDataInput) imageDataInput.value = directImageUrl;
+    if (drivePreviewImage) drivePreviewImage.src = directImageUrl;
+    if (drivePreviewContainer) drivePreviewContainer.style.display = 'block';
     
-    showDriveStatus('<i class="fas fa-check-circle"></i> Google Drive image ready!', 'success');
+    showDriveStatus('<i class="fas fa-check-circle"></i> Image ready!', 'success');
 }
 
 function extractGoogleDriveFileId(url) {
@@ -205,49 +192,44 @@ function showDriveStatus(message, type) {
     driveStatus.style.display = 'block';
 }
 
-function openProductModal(productId = null) {
-    console.log("Opening product modal, ID:", productId);
+function openProductModal(productId) {
+    console.log("Opening modal with ID:", productId);
     
     const modal = document.getElementById('product-modal');
     const modalTitle = document.getElementById('modal-title');
     const productIdInput = document.getElementById('product-id');
     
-    if (productId && typeof productId === 'number') {
-        // Edit mode
-        modalTitle.innerHTML = '<i class="fas fa-edit"></i> Edit Product';
-        productIdInput.value = productId;
+    // Clear the ID input first
+    if (productIdInput) productIdInput.value = '';
+    
+    if (productId && !isNaN(productId)) {
+        // Edit mode - ensure it's a number
+        if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-edit"></i> Edit Product';
+        if (productIdInput) productIdInput.value = productId;
         loadProductData(productId);
     } else {
-        // Add mode
-        modalTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Add New Product';
-        productIdInput.value = '';
+        // Add mode - ensure ID is empty
+        if (modalTitle) modalTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Add New Product';
+        if (productIdInput) productIdInput.value = '';
         resetProductForm();
     }
     
-    modal.style.display = 'block';
+    if (modal) modal.style.display = 'block';
 }
 
 function resetProductForm() {
-    console.log("Resetting product form");
-    
     const form = document.getElementById('product-form');
     if (form) form.reset();
-    
     resetImageForm();
 }
 
 function loadProductData(productId) {
-    console.log("Loading product data for ID:", productId);
-    
     const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
     const product = products.find(p => p.id === productId);
     
-    if (!product) {
-        console.error("Product not found:", productId);
-        return;
-    }
+    if (!product) return;
     
-    // Fill form fields
+    // Fill form
     document.getElementById('product-name').value = product.name || '';
     document.getElementById('product-description').value = product.description || '';
     document.getElementById('product-price').value = product.price || '';
@@ -257,52 +239,48 @@ function loadProductData(productId) {
     // Handle image
     const imageData = product.image || '';
     const imageDataInput = document.getElementById('product-image-data');
+    if (imageDataInput && imageData) imageDataInput.value = imageData;
     
     if (imageData && imageData.includes('drive.google.com')) {
-        imageDataInput.value = imageData;
+        const previewImage = document.getElementById('drive-preview-image');
+        const previewContainer = document.getElementById('drive-preview-container');
         
-        // Show in preview
-        document.getElementById('drive-preview-image').src = imageData;
-        document.getElementById('drive-preview-container').style.display = 'block';
+        if (previewImage) previewImage.src = imageData;
+        if (previewContainer) previewContainer.style.display = 'block';
         
-        // Extract and show original link
+        // Extract file ID for display
         const fileIdMatch = imageData.match(/id=([a-zA-Z0-9_-]+)/);
-        if (fileIdMatch && fileIdMatch[1]) {
-            document.getElementById('drive-link').value = `https://drive.google.com/file/d/${fileIdMatch[1]}/view`;
+        const driveLinkInput = document.getElementById('drive-link');
+        if (fileIdMatch && fileIdMatch[1] && driveLinkInput) {
+            driveLinkInput.value = `https://drive.google.com/file/d/${fileIdMatch[1]}/view`;
         }
     }
 }
 
 function handleProductSubmit(e) {
     e.preventDefault();
+    console.log("=== FORM SUBMISSION ===");
     
-    console.log("=== PRODUCT FORM SUBMISSION STARTED ===");
-    
-    // Get form values
-    const productId = document.getElementById('product-id').value;
-    const imageData = document.getElementById('product-image-data').value;
-    const name = document.getElementById('product-name').value.trim();
-    const description = document.getElementById('product-description').value.trim();
-    const price = parseFloat(document.getElementById('product-price').value);
-    const category = document.getElementById('product-category').value;
-    const stock = parseInt(document.getElementById('product-stock').value) || 1;
-    
-    console.log("Form Data:", {
-        id: productId,
-        name: name,
-        price: price,
-        category: category,
-        image: imageData ? 'Yes' : 'No'
-    });
+    // Get values
+    const productId = document.getElementById('product-id')?.value || '';
+    const imageData = document.getElementById('product-image-data')?.value || '';
+    const name = document.getElementById('product-name')?.value.trim() || '';
+    const description = document.getElementById('product-description')?.value.trim() || '';
+    const priceValue = document.getElementById('product-price')?.value || '0';
+    const category = document.getElementById('product-category')?.value || '';
+    const stockValue = document.getElementById('product-stock')?.value || '1';
     
     // Validation
-    if (!name) { alert('Please enter product name'); return; }
-    if (!description) { alert('Please enter description'); return; }
-    if (!price || price <= 0) { alert('Please enter valid price'); return; }
-    if (!category) { alert('Please select category'); return; }
-    if (!imageData) { alert('Please add Google Drive image'); return; }
+    if (!name) { alert('Product name required'); return; }
+    if (!description) { alert('Description required'); return; }
+    if (!priceValue || parseFloat(priceValue) <= 0) { alert('Valid price required'); return; }
+    if (!category) { alert('Category required'); return; }
+    if (!imageData) { alert('Google Drive image required'); return; }
     
-    // Create product object
+    const price = parseFloat(priceValue);
+    const stock = parseInt(stockValue) || 1;
+    
+    // Create product
     const productData = {
         name: name,
         description: description,
@@ -313,49 +291,39 @@ function handleProductSubmit(e) {
         dateAdded: new Date().toISOString()
     };
     
-    // Save product
+    // Save to localStorage
     let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
     
-    if (productId) {
-        // Update existing product
+    if (productId && !isNaN(parseInt(productId))) {
+        // Update existing
         const index = products.findIndex(p => p.id === parseInt(productId));
         if (index !== -1) {
             productData.id = parseInt(productId);
-            productData.dateAdded = products[index].dateAdded;
+            productData.dateAdded = products[index].dateAdded || new Date().toISOString();
             products[index] = productData;
             showNotification('Product updated!', 'success');
         }
     } else {
-        // Add new product
+        // Add new
         const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
         productData.id = newId;
         products.push(productData);
         showNotification('Product added!', 'success');
+        console.log("✅ New product ID:", newId);
     }
     
-    // Save to localStorage
-    try {
-        localStorage.setItem('shopEasyProducts', JSON.stringify(products));
-        console.log("✅ Products saved, total:", products.length);
-    } catch (error) {
-        console.error("Save error:", error);
-        alert('Error saving: ' + error.message);
-        return;
-    }
+    // Save
+    localStorage.setItem('shopEasyProducts', JSON.stringify(products));
     
-    // Refresh and close
+    // Refresh
     loadAdminProducts();
-    setTimeout(closeProductModal, 500);
+    document.getElementById('product-modal').style.display = 'none';
+    resetProductForm();
     
     // Refresh main store
     if (typeof loadProducts === 'function') {
-        loadProducts();
+        setTimeout(loadProducts, 100);
     }
-}
-
-function closeProductModal() {
-    document.getElementById('product-modal').style.display = 'none';
-    resetProductForm();
 }
 
 function loadAdminProducts() {
@@ -386,31 +354,25 @@ function loadAdminProducts() {
         productCard.className = 'admin-product-card';
         productCard.setAttribute('data-id', product.id);
         
-        const isGoogleDrive = product.image.includes('drive.google.com');
-        
         productCard.innerHTML = `
             <div class="admin-product-image">
                 <img src="${product.image}" alt="${product.name}" 
                      onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48cGF0aCBkPSJNNzUgODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSAxODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSA4NVpNMTc1IDVIMjVWMjBIMTc1VjVaIiBmaWxsPSIjY2NjIi8+PC9zdmc+'">
-                ${isGoogleDrive ? '<span class="drive-indicator"><i class="fab fa-google-drive"></i></span>' : ''}
+                ${product.image.includes('drive.google.com') ? '<span class="drive-indicator"><i class="fab fa-google-drive"></i></span>' : ''}
             </div>
             <div class="admin-product-info">
-                <h3 class="admin-product-title">${product.name}</h3>
-                <p class="admin-product-description">${product.description.substring(0, 60)}${product.description.length > 60 ? '...' : ''}</p>
+                <h3>${product.name}</h3>
+                <p>${product.description.substring(0, 60)}${product.description.length > 60 ? '...' : ''}</p>
                 <div class="admin-product-meta">
-                    <span class="product-category">
-                        <i class="fas fa-folder"></i> ${product.category}
-                    </span>
-                    <span class="product-stock">
-                        <i class="fas fa-box"></i> ${product.stock || 0} in stock
-                    </span>
+                    <span><i class="fas fa-folder"></i> ${product.category}</span>
+                    <span><i class="fas fa-box"></i> ${product.stock || 0} in stock</span>
                 </div>
                 <div class="admin-product-price">R${product.price.toFixed(2)}</div>
                 <div class="admin-product-actions">
-                    <button class="btn-edit edit-product-btn" data-id="${product.id}">
+                    <button class="btn-edit" data-id="${product.id}">
                         <i class="fas fa-edit"></i> Edit
                     </button>
-                    <button class="btn-delete delete-product-btn" data-id="${product.id}">
+                    <button class="btn-delete" data-id="${product.id}">
                         <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
@@ -420,35 +382,31 @@ function loadAdminProducts() {
         productsGrid.appendChild(productCard);
     });
     
-    // Add event listeners to buttons
+    // Add event listeners
     setTimeout(() => {
-        document.querySelectorAll('.edit-product-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const productId = parseInt(this.getAttribute('data-id'));
-                console.log("Edit clicked, ID:", productId);
-                openProductModal(productId);
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = parseInt(this.getAttribute('data-id'));
+                openProductModal(id);
             });
         });
         
-        document.querySelectorAll('.delete-product-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const productId = parseInt(this.getAttribute('data-id'));
-                console.log("Delete clicked, ID:", productId);
-                confirmDeleteProduct(productId);
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = parseInt(this.getAttribute('data-id'));
+                confirmDeleteProduct(id);
             });
         });
     }, 100);
 }
 
 function confirmDeleteProduct(productId) {
-    const deleteModal = document.getElementById('delete-modal');
-    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    const modal = document.getElementById('delete-modal');
+    const confirmBtn = document.getElementById('confirm-delete');
     
-    if (deleteModal && confirmDeleteBtn) {
-        confirmDeleteBtn.setAttribute('data-product-id', productId);
-        deleteModal.style.display = 'block';
+    if (modal && confirmBtn) {
+        confirmBtn.setAttribute('data-product-id', productId);
+        modal.style.display = 'block';
     }
 }
 
@@ -462,14 +420,14 @@ function deleteProduct(productId) {
         localStorage.setItem('shopEasyProducts', JSON.stringify(products));
         showNotification('Product deleted!', 'success');
         loadAdminProducts();
-        
-        if (typeof loadProducts === 'function') {
-            loadProducts();
-        }
+        if (typeof loadProducts === 'function') loadProducts();
     }
 }
 
-function showNotification(message, type = 'info') {
+function showNotification(message, type) {
+    const existing = document.querySelectorAll('.notification');
+    existing.forEach(n => n.remove());
+    
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
@@ -480,50 +438,11 @@ function showNotification(message, type = 'info') {
         <button class="notification-close">&times;</button>
     `;
     
-    if (!document.querySelector('#notification-styles')) {
-        const style = document.createElement('style');
-        style.id = 'notification-styles';
-        style.textContent = `
-            .notification {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                min-width: 300px;
-                animation: slideInRight 0.3s ease;
-                border-left: 4px solid #3498db;
-            }
-            .notification-success { border-left-color: #27ae60; }
-            .notification-error { border-left-color: #e74c3c; }
-            .notification-content { display: flex; align-items: center; gap: 10px; }
-            .notification-content i { font-size: 1.2rem; }
-            .notification-success .notification-content i { color: #27ae60; }
-            .notification-error .notification-content i { color: #e74c3c; }
-            .notification-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7f8c8d; margin-left: 15px; }
-            @keyframes slideInRight {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-    
     document.body.appendChild(notification);
     
     notification.querySelector('.notification-close').addEventListener('click', () => {
         notification.remove();
     });
     
-    setTimeout(() => {
-        if (notification.parentNode) notification.remove();
-    }, 3000);
+    setTimeout(() => notification.remove(), 3000);
 }
-
-console.log("🟡 Admin JS ready. Check console for logs.");
