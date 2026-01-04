@@ -149,7 +149,7 @@ function loadCartItems() {
         // Get product stock
         const product = getProductById(item.id);
         const stock = product ? (product.stock || 0) : 0;
-        const maxQuantity = Math.min(stock, 99); // Limit to stock or 99
+        const maxQuantity = Math.min(stock, 99);
         
         cartHTML += `
             <div class="cart-item">
