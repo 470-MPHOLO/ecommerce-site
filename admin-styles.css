@@ -554,227 +554,6 @@ body {
     min-height: 100px;
 }
 
-/* Image Upload */
-.image-upload-container {
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 25px;
-    border: 2px dashed #ced4da;
-    transition: all 0.3s;
-}
-
-.image-upload-container:hover {
-    border-color: #3498db;
-    background: #f1f8ff;
-}
-
-.upload-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 30px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.upload-area.dragover {
-    background: #e3f2fd;
-    border-color: #3498db;
-}
-
-.upload-icon {
-    font-size: 3rem;
-    color: #3498db;
-    margin-bottom: 15px;
-}
-
-.upload-title {
-    font-size: 1.2rem;
-    color: #2c3e50;
-    margin-bottom: 5px;
-    font-weight: 500;
-}
-
-.upload-subtitle {
-    color: #6c757d;
-    margin-bottom: 20px;
-    font-size: 0.95rem;
-}
-
-.upload-info {
-    color: #6c757d;
-    font-size: 0.85rem;
-    margin-top: 15px;
-}
-
-#browse-btn {
-    margin-top: 10px;
-    padding: 12px 25px;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s;
-}
-
-.btn-secondary:hover {
-    background: #5a6268;
-}
-
-/* Image Preview */
-.image-preview-container {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    border: 2px solid #eaeaea;
-}
-
-.preview-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.preview-header h4 {
-    color: #2c3e50;
-    font-size: 1.1rem;
-}
-
-.btn-small {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: background 0.3s;
-}
-
-.btn-small:hover {
-    background: #5a6268;
-}
-
-.preview-image {
-    width: 100%;
-    max-height: 300px;
-    object-fit: contain;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    border: 1px solid #eaeaea;
-    background: #f8f9fa;
-}
-
-.preview-actions {
-    text-align: center;
-}
-
-.btn-delete {
-    background: #e74c3c;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s;
-}
-
-.btn-delete:hover {
-    background: #c0392b;
-}
-
-/* Loading State */
-.loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    color: #3498db;
-    font-size: 1.1rem;
-}
-
-.loading i {
-    font-size: 2rem;
-    margin-bottom: 15px;
-}
-
-/* Form Actions */
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eaeaea;
-}
-
-/* Google Drive Upload Styles */
-.upload-method-tabs {
-    display: flex;
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 5px;
-    margin-bottom: 20px;
-    border: 1px solid #eaeaea;
-}
-
-.method-tab {
-    flex: 1;
-    padding: 12px 15px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #6c757d;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border-radius: 6px;
-    transition: all 0.3s;
-}
-
-.method-tab:hover {
-    background: rgba(52, 152, 219, 0.1);
-    color: #3498db;
-}
-
-.method-tab.active {
-    background: #3498db;
-    color: white;
-    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-}
-
-.method-content {
-    display: none;
-}
-
-.method-content.active {
-    display: block;
-    animation: fadeIn 0.3s ease;
-}
-
 /* Google Drive Instructions */
 .drive-instructions {
     background: white;
@@ -913,20 +692,48 @@ body {
     gap: 5px;
 }
 
-.preview-info {
+.preview-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid #eaeaea;
     background: #f8f9fa;
-    padding: 10px 15px;
-    border-radius: 6px;
-    margin-top: 15px;
-    color: #5f6368;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
-.preview-info i {
-    color: #4caf50;
+.preview-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-small {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.3s;
+}
+
+.btn-small:hover {
+    background: #5a6268;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eaeaea;
 }
 
 /* Delete Modal */
