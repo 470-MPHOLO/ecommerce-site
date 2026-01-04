@@ -1,10 +1,7 @@
-// Admin JavaScript with Image Upload
+// Admin JavaScript with Google Drive Integration
 document.addEventListener('DOMContentLoaded', function() {
     // Authentication Check
     checkAdminAuth();
-    
-    // Initialize Admin Panel
-    initAdminPanel();
 });
 
 function checkAdminAuth() {
@@ -36,6 +33,7 @@ function checkAdminAuth() {
         });
     } else {
         authCheck.style.display = 'none';
+        initAdminPanel();
     }
 }
 
@@ -46,8 +44,9 @@ function initAdminPanel() {
     // Setup event listeners
     setupEventListeners();
     
-    // Setup image upload
+    // Setup image upload (both methods)
     setupImageUpload();
+    setupGoogleDriveUpload();
 }
 
 function setupEventListeners() {
@@ -138,7 +137,7 @@ function setupImageUpload() {
     const previewImage = document.getElementById('uploaded-preview');
     const changeImageBtn = document.getElementById('change-image');
     const removeImageBtn = document.getElementById('remove-image');
-    const base64Input = document.getElementById('product-image-base64');
+    const imageDataInput = document.getElementById('product-image-data');
     
     if (!uploadArea || !fileInput) return;
     
@@ -183,7 +182,7 @@ function setupImageUpload() {
         changeImageBtn.addEventListener('click', function() {
             previewContainer.style.display = 'none';
             uploadArea.style.display = 'flex';
-            base64Input.value = '';
+            imageDataInput.value = '';
             fileInput.value = '';
         });
     }
@@ -193,7 +192,7 @@ function setupImageUpload() {
         removeImageBtn.addEventListener('click', function() {
             previewContainer.style.display = 'none';
             uploadArea.style.display = 'flex';
-            base64Input.value = '';
+            imageDataInput.value = '';
             fileInput.value = '';
         });
     }
@@ -218,10 +217,12 @@ function setupImageUpload() {
         // Show loading state
         uploadArea.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Processing image...</div>';
         
-        // Compress and convert image
-        compressImage(file, function(compressedBase64) {
+        // Convert to Base64
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
             // Show preview
-            previewImage.src = compressedBase64;
+            previewImage.src = event.target.result;
             previewContainer.style.display = 'block';
             uploadArea.style.display = 'none';
             
@@ -237,10 +238,6 @@ function setupImageUpload() {
                     <i class="fas fa-folder-open"></i> Choose File
                 </button>
                 <p class="upload-info">Max: 2MB • JPG, PNG, GIF</p>
-                <p class="upload-tip">
-                    <i class="fas fa-lightbulb"></i> 
-                    Tip: Use good lighting and plain background
-                </p>
             `;
             
             // Re-attach event listeners
@@ -254,64 +251,163 @@ function setupImageUpload() {
                 });
             }
             
-            // Store Base64 in hidden input
-            base64Input.value = compressedBase64;
+            // Store as Base64
+            imageDataInput.value = event.target.result;
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+
+function setupGoogleDriveUpload() {
+    const methodTabs = document.querySelectorAll('.method-tab');
+    const methodContents = document.querySelectorAll('.method-content');
+    
+    // Tab switching
+    methodTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const method = this.getAttribute('data-method');
+            
+            // Update active tab
+            methodTabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show corresponding content
+            methodContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === `${method}-method`) {
+                    content.classList.add('active');
+                }
+            });
+            
+            // Clear image data when switching methods
+            document.getElementById('product-image-data').value = '';
+        });
+    });
+    
+    // Google Drive conversion
+    const convertDriveBtn = document.getElementById('convert-drive-btn');
+    const driveLinkInput = document.getElementById('drive-link');
+    
+    if (convertDriveBtn && driveLinkInput) {
+        convertDriveBtn.addEventListener('click', convertGoogleDriveUrl);
+        driveLinkInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                convertGoogleDriveUrl();
+            }
         });
     }
 }
 
-function compressImage(file, callback) {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
+function convertGoogleDriveUrl() {
+    const driveLink = document.getElementById('drive-link').value.trim();
+    const driveStatus = document.getElementById('drive-status');
+    const drivePreviewContainer = document.getElementById('drive-preview-container');
+    const drivePreviewImage = document.getElementById('drive-preview-image');
+    const imageDataInput = document.getElementById('product-image-data');
     
-    reader.onload = function(event) {
-        const img = new Image();
-        img.src = event.target.result;
+    if (!driveLink) {
+        showDriveStatus('Please enter a Google Drive link', 'error');
+        return;
+    }
+    
+    // Validate it's a Google Drive link
+    if (!driveLink.includes('drive.google.com')) {
+        showDriveStatus('Not a valid Google Drive link', 'error');
+        return;
+    }
+    
+    showDriveStatus('Converting Google Drive link...', 'loading');
+    
+    // Extract file ID
+    let fileId = extractGoogleDriveFileId(driveLink);
+    
+    if (!fileId) {
+        showDriveStatus('Could not extract file ID. Make sure it\'s a shareable link.', 'error');
+        return;
+    }
+    
+    // Create direct image URL
+    const directImageUrl = `https://drive.google.com/uc?id=${fileId}`;
+    
+    // Test if image loads
+    testImageLoad(directImageUrl);
+}
+
+function extractGoogleDriveFileId(url) {
+    // Multiple Google Drive URL patterns
+    const patterns = [
+        /\/d\/([a-zA-Z0-9_-]+)/,           // /d/FILE_ID/
+        /id=([a-zA-Z0-9_-]+)/,              // ?id=FILE_ID
+        /\/file\/d\/([a-zA-Z0-9_-]+)/,      // /file/d/FILE_ID/
+        /open\?id=([a-zA-Z0-9_-]+)/         // /open?id=FILE_ID
+    ];
+    
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+    
+    return null;
+}
+
+function testImageLoad(imageUrl) {
+    const driveStatus = document.getElementById('drive-status');
+    const drivePreviewContainer = document.getElementById('drive-preview-container');
+    const drivePreviewImage = document.getElementById('drive-preview-image');
+    const imageDataInput = document.getElementById('product-image-data');
+    
+    const img = new Image();
+    
+    img.onload = function() {
+        // Image loaded successfully
+        drivePreviewImage.src = imageUrl;
+        drivePreviewContainer.style.display = 'block';
         
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Max dimensions
-            const maxWidth = 800;
-            const maxHeight = 800;
-            
-            let width = img.width;
-            let height = img.height;
-            
-            // Calculate new dimensions
-            if (width > height) {
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-            } else {
-                if (height > maxHeight) {
-                    width = Math.round((width * maxHeight) / height);
-                    height = maxHeight;
-                }
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            
-            // Draw and compress
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // Get compressed Base64 (quality: 0.8 = 80%)
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-            callback(compressedBase64);
-        };
+        // Save the Google Drive URL
+        imageDataInput.value = imageUrl;
         
-        img.onerror = function() {
-            alert('Error loading image. Please try another image.');
-            callback(event.target.result); // Use original if compression fails
-        };
+        showDriveStatus('<i class="fas fa-check-circle"></i> Google Drive image loaded successfully!', 'success');
+        
+        // Also hide the upload area if it's visible
+        const uploadArea = document.getElementById('upload-area');
+        const uploadPreview = document.getElementById('image-preview-container');
+        if (uploadArea) uploadArea.style.display = 'none';
+        if (uploadPreview) uploadPreview.style.display = 'none';
     };
     
-    reader.onerror = function() {
-        alert('Error reading file. Please try again.');
+    img.onerror = function() {
+        // Image failed to load
+        showDriveStatus('<i class="fas fa-exclamation-triangle"></i> Failed to load image. Please check:<br>' +
+                       '1. File is set to "Anyone with the link"<br>' +
+                       '2. Link is to an image file (jpg, png, etc.)<br>' +
+                       '3. File exists in Google Drive', 'error');
+        
+        drivePreviewContainer.style.display = 'none';
+        imageDataInput.value = '';
     };
+    
+    // Set timeout for slow connections
+    setTimeout(() => {
+        if (!img.complete) {
+            showDriveStatus('<i class="fas fa-exclamation-triangle"></i> Taking too long to load. Image might be very large or link incorrect.', 'warning');
+        }
+    }, 5000);
+    
+    // Start loading
+    img.src = imageUrl;
+}
+
+function showDriveStatus(message, type) {
+    const driveStatus = document.getElementById('drive-status');
+    if (!driveStatus) return;
+    
+    driveStatus.innerHTML = message;
+    driveStatus.className = 'drive-status';
+    driveStatus.classList.add(`status-${type}`);
+    driveStatus.style.display = 'block';
 }
 
 function openProductModal(productId = null) {
@@ -338,13 +434,33 @@ function resetProductForm() {
     const form = document.getElementById('product-form');
     if (form) form.reset();
     
+    // Reset image previews
     const previewContainer = document.getElementById('image-preview-container');
+    const drivePreviewContainer = document.getElementById('drive-preview-container');
     const uploadArea = document.getElementById('upload-area');
-    const base64Input = document.getElementById('product-image-base64');
+    const imageDataInput = document.getElementById('product-image-data');
+    const driveStatus = document.getElementById('drive-status');
+    const driveLinkInput = document.getElementById('drive-link');
     
     if (previewContainer) previewContainer.style.display = 'none';
+    if (drivePreviewContainer) drivePreviewContainer.style.display = 'none';
     if (uploadArea) uploadArea.style.display = 'flex';
-    if (base64Input) base64Input.value = '';
+    if (imageDataInput) imageDataInput.value = '';
+    if (driveStatus) driveStatus.style.display = 'none';
+    if (driveLinkInput) driveLinkInput.value = '';
+    
+    // Reset to upload tab
+    const uploadTab = document.querySelector('.method-tab[data-method="upload"]');
+    const driveTab = document.querySelector('.method-tab[data-method="drive"]');
+    const uploadContent = document.getElementById('upload-method');
+    const driveContent = document.getElementById('drive-method');
+    
+    if (uploadTab && driveTab && uploadContent && driveContent) {
+        uploadTab.classList.add('active');
+        driveTab.classList.remove('active');
+        uploadContent.classList.add('active');
+        driveContent.classList.remove('active');
+    }
 }
 
 function loadProductData(productId) {
@@ -361,26 +477,47 @@ function loadProductData(productId) {
     document.getElementById('product-stock').value = product.stock || 1;
     
     // Handle image
-    const base64Input = document.getElementById('product-image-base64');
-    const previewContainer = document.getElementById('image-preview-container');
-    const previewImage = document.getElementById('uploaded-preview');
-    const uploadArea = document.getElementById('upload-area');
+    const imageData = product.image || '';
+    const imageDataInput = document.getElementById('product-image-data');
+    const isGoogleDrive = imageData.includes('drive.google.com');
     
-    if (product.image) {
-        // Check if it's a Base64 image or URL
-        if (product.image.startsWith('data:image')) {
-            // It's a Base64 image
-            base64Input.value = product.image;
-            previewImage.src = product.image;
-            previewContainer.style.display = 'block';
-            uploadArea.style.display = 'none';
+    if (imageData) {
+        imageDataInput.value = imageData;
+        
+        if (isGoogleDrive) {
+            // Show Google Drive tab
+            const driveTab = document.querySelector('.method-tab[data-method="drive"]');
+            const uploadTab = document.querySelector('.method-tab[data-method="upload"]');
+            const driveContent = document.getElementById('drive-method');
+            const uploadContent = document.getElementById('upload-method');
+            
+            driveTab.classList.add('active');
+            uploadTab.classList.remove('active');
+            driveContent.classList.add('active');
+            uploadContent.classList.remove('active');
+            
+            // Show in Google Drive preview
+            const drivePreviewImage = document.getElementById('drive-preview-image');
+            const drivePreviewContainer = document.getElementById('drive-preview-container');
+            const driveLinkInput = document.getElementById('drive-link');
+            
+            drivePreviewImage.src = imageData;
+            drivePreviewContainer.style.display = 'block';
+            driveLinkInput.value = imageData;
+            
+            // Hide upload area
+            const uploadArea = document.getElementById('upload-area');
+            if (uploadArea) uploadArea.style.display = 'none';
+            
         } else {
-            // It's a URL, we need to convert it to Base64
-            // For simplicity, we'll just show the URL
-            base64Input.value = product.image;
-            previewImage.src = product.image;
+            // Show Base64 image in upload preview
+            const previewImage = document.getElementById('uploaded-preview');
+            const previewContainer = document.getElementById('image-preview-container');
+            const uploadArea = document.getElementById('upload-area');
+            
+            previewImage.src = imageData;
             previewContainer.style.display = 'block';
-            uploadArea.style.display = 'none';
+            if (uploadArea) uploadArea.style.display = 'none';
         }
     }
 }
@@ -388,50 +525,73 @@ function loadProductData(productId) {
 function handleProductSubmit(e) {
     e.preventDefault();
     
-    const productId = document.getElementById('product-id').value;
-    const imageBase64 = document.getElementById('product-image-base64').value;
-    
-    // Validate required fields
-    const name = document.getElementById('product-name').value.trim();
-    const description = document.getElementById('product-description').value.trim();
-    const price = parseFloat(document.getElementById('product-price').value);
-    const category = document.getElementById('product-category').value;
-    const stock = parseInt(document.getElementById('product-stock').value) || 1;
-    
-    if (!name || !description || !price || !category) {
-        alert('Please fill in all required fields');
-        return;
-    }
-    
-    if (!imageBase64) {
-        alert('Please upload a product image');
-        return;
-    }
-    
-    const productData = {
-        name: name,
-        description: description,
-        price: price,
-        category: category,
-        stock: stock,
-        image: imageBase64,
-        dateAdded: new Date().toISOString()
-    };
-    
-    if (productId) {
-        // Update existing product
-        if (updateProduct(parseInt(productId), productData)) {
-            showNotification('Product updated successfully!', 'success');
-            loadAdminProducts();
-            closeProductModal();
-        } else {
-            showNotification('Error updating product', 'error');
+    try {
+        const productId = document.getElementById('product-id').value;
+        const imageData = document.getElementById('product-image-data').value;
+        
+        // Validate required fields
+        const name = document.getElementById('product-name').value.trim();
+        const description = document.getElementById('product-description').value.trim();
+        const price = parseFloat(document.getElementById('product-price').value);
+        const category = document.getElementById('product-category').value;
+        const stock = parseInt(document.getElementById('product-stock').value) || 1;
+        
+        // Show specific error messages
+        if (!name) {
+            alert('Please enter a product name');
+            document.getElementById('product-name').focus();
+            return;
         }
-    } else {
-        // Add new product
-        const newId = addProduct(productData);
-        if (newId) {
-            showNotification('Product added successfully!', 'success');
+        
+        if (!description) {
+            alert('Please enter a product description');
+            document.getElementById('product-description').focus();
+            return;
+        }
+        
+        if (!price || price <= 0) {
+            alert('Please enter a valid price greater than 0');
+            document.getElementById('product-price').focus();
+            return;
+        }
+        
+        if (!category) {
+            alert('Please select a category');
+            document.getElementById('product-category').focus();
+            return;
+        }
+        
+        if (!imageData) {
+            alert('Please add a product image (upload or Google Drive)');
+            return;
+        }
+        
+        const productData = {
+            name: name,
+            description: description,
+            price: price,
+            category: category,
+            stock: stock,
+            image: imageData,
+            dateAdded: new Date().toISOString()
+        };
+        
+        let success = false;
+        let message = '';
+        
+        if (productId) {
+            // Update existing product
+            success = updateProduct(parseInt(productId), productData);
+            message = success ? 'Product updated successfully!' : 'Error updating product';
+        } else {
+            // Add new product
+            const newId = addProduct(productData);
+            success = !!newId;
+            message = success ? 'Product added successfully!' : 'Error adding product';
+        }
+        
+        if (success) {
+            showNotification(message, 'success');
             loadAdminProducts();
             closeProductModal();
             
@@ -440,8 +600,12 @@ function handleProductSubmit(e) {
                 loadProducts();
             }
         } else {
-            showNotification('Error adding product', 'error');
+            showNotification(message, 'error');
         }
+        
+    } catch (error) {
+        console.error('Form submission error:', error);
+        alert('Error: ' + error.message);
     }
 }
 
@@ -483,10 +647,13 @@ function loadAdminProducts() {
         productCard.className = 'admin-product-card';
         productCard.setAttribute('data-id', product.id);
         
+        const isGoogleDrive = product.image.includes('drive.google.com');
+        
         productCard.innerHTML = `
             <div class="admin-product-image">
                 <img src="${product.image}" alt="${product.name}" 
                      onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48cGF0aCBkPSJNNzUgODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSAxODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSA4NVpNMTc1IDVIMjVWMjBIMTc1VjVaIiBmaWxsPSIjY2NjIi8+PC9zdmc+'">
+                ${isGoogleDrive ? '<span class="drive-indicator"><i class="fab fa-google-drive"></i></span>' : ''}
             </div>
             <div class="admin-product-info">
                 <h3 class="admin-product-title">${product.name}</h3>
@@ -558,75 +725,73 @@ function showNotification(message, type = 'info') {
         <button class="notification-close">&times;</button>
     `;
     
-    // Add styles
-    const style = document.createElement('style');
-    style.textContent = `
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            min-width: 300px;
-            animation: slideInRight 0.3s ease;
-            border-left: 4px solid #3498db;
-        }
-        
-        .notification-success {
-            border-left-color: #27ae60;
-        }
-        
-        .notification-error {
-            border-left-color: #e74c3c;
-        }
-        
-        .notification-content {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .notification-content i {
-            font-size: 1.2rem;
-        }
-        
-        .notification-success .notification-content i {
-            color: #27ae60;
-        }
-        
-        .notification-error .notification-content i {
-            color: #e74c3c;
-        }
-        
-        .notification-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #7f8c8d;
-            margin-left: 15px;
-        }
-        
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    
-    // Check if style already exists
+    // Add styles if not already added
     if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
         style.id = 'notification-styles';
+        style.textContent = `
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-width: 300px;
+                animation: slideInRight 0.3s ease;
+                border-left: 4px solid #3498db;
+            }
+            
+            .notification-success {
+                border-left-color: #27ae60;
+            }
+            
+            .notification-error {
+                border-left-color: #e74c3c;
+            }
+            
+            .notification-content {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .notification-content i {
+                font-size: 1.2rem;
+            }
+            
+            .notification-success .notification-content i {
+                color: #27ae60;
+            }
+            
+            .notification-error .notification-content i {
+                color: #e74c3c;
+            }
+            
+            .notification-close {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: #7f8c8d;
+                margin-left: 15px;
+            }
+            
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
         document.head.appendChild(style);
     }
     
