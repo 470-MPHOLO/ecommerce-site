@@ -1,4 +1,4 @@
-// Admin JavaScript with Google Drive Integration
+// Admin JavaScript with Google Drive Integration ONLY
 document.addEventListener('DOMContentLoaded', function() {
     // Authentication Check
     checkAdminAuth();
@@ -44,8 +44,7 @@ function initAdminPanel() {
     // Setup event listeners
     setupEventListeners();
     
-    // Setup image upload (both methods)
-    setupImageUpload();
+    // Setup Google Drive upload only
     setupGoogleDriveUpload();
 }
 
@@ -129,162 +128,7 @@ function setupEventListeners() {
     }
 }
 
-function setupImageUpload() {
-    const uploadArea = document.getElementById('upload-area');
-    const fileInput = document.getElementById('image-file');
-    const browseBtn = document.getElementById('browse-btn');
-    const previewContainer = document.getElementById('image-preview-container');
-    const previewImage = document.getElementById('uploaded-preview');
-    const changeImageBtn = document.getElementById('change-image');
-    const removeImageBtn = document.getElementById('remove-image');
-    const imageDataInput = document.getElementById('product-image-data');
-    
-    if (!uploadArea || !fileInput) return;
-    
-    // Browse button
-    if (browseBtn) {
-        browseBtn.addEventListener('click', function() {
-            fileInput.click();
-        });
-    }
-    
-    // File input change
-    fileInput.addEventListener('change', handleFileSelect);
-    
-    // Drag and drop
-    uploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
-    
-    uploadArea.addEventListener('dragleave', function() {
-        uploadArea.classList.remove('dragover');
-    });
-    
-    uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleImageFile(files[0]);
-        }
-    });
-    
-    // Click to browse
-    uploadArea.addEventListener('click', function(e) {
-        if (e.target !== browseBtn && e.target.tagName !== 'BUTTON') {
-            fileInput.click();
-        }
-    });
-    
-    // Change image button
-    if (changeImageBtn) {
-        changeImageBtn.addEventListener('click', function() {
-            previewContainer.style.display = 'none';
-            uploadArea.style.display = 'flex';
-            imageDataInput.value = '';
-            fileInput.value = '';
-        });
-    }
-    
-    // Remove image button
-    if (removeImageBtn) {
-        removeImageBtn.addEventListener('click', function() {
-            previewContainer.style.display = 'none';
-            uploadArea.style.display = 'flex';
-            imageDataInput.value = '';
-            fileInput.value = '';
-        });
-    }
-    
-    function handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (file) handleImageFile(file);
-    }
-    
-    function handleImageFile(file) {
-        // Validate file
-        if (!file.type.match('image.*')) {
-            alert('Please select an image file (JPG, PNG, GIF)');
-            return;
-        }
-        
-        if (file.size > 2 * 1024 * 1024) {
-            alert('Image size must be less than 2MB');
-            return;
-        }
-        
-        // Show loading state
-        uploadArea.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Processing image...</div>';
-        
-        // Convert to Base64
-        const reader = new FileReader();
-        
-        reader.onload = function(event) {
-            // Show preview
-            previewImage.src = event.target.result;
-            previewContainer.style.display = 'block';
-            uploadArea.style.display = 'none';
-            
-            // Restore upload area HTML
-            uploadArea.innerHTML = `
-                <div class="upload-icon">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                </div>
-                <p class="upload-title">Upload Product Photo</p>
-                <p class="upload-subtitle">Drag & drop or click to browse</p>
-                <input type="file" id="image-file" accept="image/*" capture="environment">
-                <button type="button" id="browse-btn" class="btn-secondary">
-                    <i class="fas fa-folder-open"></i> Choose File
-                </button>
-                <p class="upload-info">Max: 2MB • JPG, PNG, GIF</p>
-            `;
-            
-            // Re-attach event listeners
-            const newFileInput = document.getElementById('image-file');
-            const newBrowseBtn = document.getElementById('browse-btn');
-            
-            newFileInput.addEventListener('change', handleFileSelect);
-            if (newBrowseBtn) {
-                newBrowseBtn.addEventListener('click', function() {
-                    newFileInput.click();
-                });
-            }
-            
-            // Store as Base64
-            imageDataInput.value = event.target.result;
-        };
-        
-        reader.readAsDataURL(file);
-    }
-}
-
 function setupGoogleDriveUpload() {
-    const methodTabs = document.querySelectorAll('.method-tab');
-    const methodContents = document.querySelectorAll('.method-content');
-    
-    // Tab switching
-    methodTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const method = this.getAttribute('data-method');
-            
-            // Update active tab
-            methodTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Show corresponding content
-            methodContents.forEach(content => {
-                content.classList.remove('active');
-                if (content.id === `${method}-method`) {
-                    content.classList.add('active');
-                }
-            });
-            
-            // Clear image data when switching methods
-            document.getElementById('product-image-data').value = '';
-        });
-    });
-    
     // Google Drive conversion
     const convertDriveBtn = document.getElementById('convert-drive-btn');
     const driveLinkInput = document.getElementById('drive-link');
@@ -297,6 +141,34 @@ function setupGoogleDriveUpload() {
             }
         });
     }
+    
+    // Change image button
+    const changeImageBtn = document.getElementById('change-image');
+    if (changeImageBtn) {
+        changeImageBtn.addEventListener('click', function() {
+            resetImageForm();
+        });
+    }
+    
+    // Remove image button
+    const removeImageBtn = document.getElementById('remove-image');
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', function() {
+            resetImageForm();
+        });
+    }
+}
+
+function resetImageForm() {
+    const drivePreviewContainer = document.getElementById('drive-preview-container');
+    const imageDataInput = document.getElementById('product-image-data');
+    const driveStatus = document.getElementById('drive-status');
+    const driveLinkInput = document.getElementById('drive-link');
+    
+    if (drivePreviewContainer) drivePreviewContainer.style.display = 'none';
+    if (imageDataInput) imageDataInput.value = '';
+    if (driveStatus) driveStatus.style.display = 'none';
+    if (driveLinkInput) driveLinkInput.value = '';
 }
 
 function convertGoogleDriveUrl() {
@@ -319,8 +191,10 @@ function convertGoogleDriveUrl() {
     
     showDriveStatus('Converting Google Drive link...', 'loading');
     
-    // Extract file ID
+    // Extract file ID - FIXED VERSION
     let fileId = extractGoogleDriveFileId(driveLink);
+    
+    console.log('Extracted File ID:', fileId);
     
     if (!fileId) {
         showDriveStatus('Could not extract file ID. Make sure it\'s a shareable link.', 'error');
@@ -329,27 +203,56 @@ function convertGoogleDriveUrl() {
     
     // Create direct image URL
     const directImageUrl = `https://drive.google.com/uc?id=${fileId}`;
+    console.log('Direct Image URL:', directImageUrl);
     
     // Test if image loads
     testImageLoad(directImageUrl);
 }
 
+// FIXED Google Drive File ID Extraction
 function extractGoogleDriveFileId(url) {
-    // Multiple Google Drive URL patterns
-    const patterns = [
-        /\/d\/([a-zA-Z0-9_-]+)/,           // /d/FILE_ID/
-        /id=([a-zA-Z0-9_-]+)/,              // ?id=FILE_ID
-        /\/file\/d\/([a-zA-Z0-9_-]+)/,      // /file/d/FILE_ID/
-        /open\?id=([a-zA-Z0-9_-]+)/         // /open?id=FILE_ID
-    ];
+    console.log('Extracting from:', url);
     
-    for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-            return match[1];
+    // Remove any URL fragments
+    const cleanUrl = url.split('#')[0].trim();
+    
+    // Pattern 1: /file/d/ID/view (your exact pattern)
+    const pattern1 = /\/file\/d\/([a-zA-Z0-9_-]+)\//;
+    const match1 = cleanUrl.match(pattern1);
+    if (match1 && match1[1]) {
+        console.log('Pattern 1 matched:', match1[1]);
+        return match1[1];
+    }
+    
+    // Pattern 2: /d/ID/ (alternative pattern)
+    const pattern2 = /\/d\/([a-zA-Z0-9_-]+)/;
+    const match2 = cleanUrl.match(pattern2);
+    if (match2 && match2[1]) {
+        console.log('Pattern 2 matched:', match2[1]);
+        return match2[1];
+    }
+    
+    // Pattern 3: id= parameter
+    const pattern3 = /id=([a-zA-Z0-9_-]+)/;
+    const match3 = cleanUrl.match(pattern3);
+    if (match3 && match3[1]) {
+        console.log('Pattern 3 matched:', match3[1]);
+        return match3[1];
+    }
+    
+    // Pattern 4: Split method (fallback)
+    const parts = cleanUrl.split('/');
+    for (let i = 0; i < parts.length; i++) {
+        if (parts[i] === 'd' && parts[i + 1]) {
+            const potentialId = parts[i + 1].split('?')[0].split('/')[0];
+            if (potentialId && potentialId.length > 10) {
+                console.log('Split method found:', potentialId);
+                return potentialId;
+            }
         }
     }
     
+    console.log('No pattern matched');
     return null;
 }
 
@@ -359,9 +262,13 @@ function testImageLoad(imageUrl) {
     const drivePreviewImage = document.getElementById('drive-preview-image');
     const imageDataInput = document.getElementById('product-image-data');
     
+    console.log('Testing image load:', imageUrl);
+    
     const img = new Image();
     
     img.onload = function() {
+        console.log('✅ Image loaded successfully!');
+        
         // Image loaded successfully
         drivePreviewImage.src = imageUrl;
         drivePreviewContainer.style.display = 'block';
@@ -370,20 +277,22 @@ function testImageLoad(imageUrl) {
         imageDataInput.value = imageUrl;
         
         showDriveStatus('<i class="fas fa-check-circle"></i> Google Drive image loaded successfully!', 'success');
-        
-        // Also hide the upload area if it's visible
-        const uploadArea = document.getElementById('upload-area');
-        const uploadPreview = document.getElementById('image-preview-container');
-        if (uploadArea) uploadArea.style.display = 'none';
-        if (uploadPreview) uploadPreview.style.display = 'none';
     };
     
     img.onerror = function() {
+        console.log('❌ Image failed to load');
+        
         // Image failed to load
-        showDriveStatus('<i class="fas fa-exclamation-triangle"></i> Failed to load image. Please check:<br>' +
-                       '1. File is set to "Anyone with the link"<br>' +
-                       '2. Link is to an image file (jpg, png, etc.)<br>' +
-                       '3. File exists in Google Drive', 'error');
+        showDriveStatus(
+            '<i class="fas fa-exclamation-triangle"></i> Failed to load image.<br>' +
+            '<strong>Please check:</strong><br>' +
+            '1. File is set to "Anyone with the link"<br>' +
+            '2. Link is to an image file (jpg, png, etc.)<br>' +
+            '3. File exists in Google Drive<br><br>' +
+            '<a href="' + imageUrl + '" target="_blank" style="color: #4285f4; text-decoration: underline;">' +
+            'Click here to test the link directly</a>', 
+            'error'
+        );
         
         drivePreviewContainer.style.display = 'none';
         imageDataInput.value = '';
@@ -392,7 +301,13 @@ function testImageLoad(imageUrl) {
     // Set timeout for slow connections
     setTimeout(() => {
         if (!img.complete) {
-            showDriveStatus('<i class="fas fa-exclamation-triangle"></i> Taking too long to load. Image might be very large or link incorrect.', 'warning');
+            showDriveStatus(
+                '<i class="fas fa-exclamation-triangle"></i> Taking too long to load.<br>' +
+                'Image might be very large.<br>' +
+                '<a href="' + imageUrl + '" target="_blank" style="color: #4285f4; text-decoration: underline;">' +
+                'Try opening link directly</a>', 
+                'warning'
+            );
         }
     }, 5000);
     
@@ -435,32 +350,15 @@ function resetProductForm() {
     if (form) form.reset();
     
     // Reset image previews
-    const previewContainer = document.getElementById('image-preview-container');
     const drivePreviewContainer = document.getElementById('drive-preview-container');
-    const uploadArea = document.getElementById('upload-area');
     const imageDataInput = document.getElementById('product-image-data');
     const driveStatus = document.getElementById('drive-status');
     const driveLinkInput = document.getElementById('drive-link');
     
-    if (previewContainer) previewContainer.style.display = 'none';
     if (drivePreviewContainer) drivePreviewContainer.style.display = 'none';
-    if (uploadArea) uploadArea.style.display = 'flex';
     if (imageDataInput) imageDataInput.value = '';
     if (driveStatus) driveStatus.style.display = 'none';
     if (driveLinkInput) driveLinkInput.value = '';
-    
-    // Reset to upload tab
-    const uploadTab = document.querySelector('.method-tab[data-method="upload"]');
-    const driveTab = document.querySelector('.method-tab[data-method="drive"]');
-    const uploadContent = document.getElementById('upload-method');
-    const driveContent = document.getElementById('drive-method');
-    
-    if (uploadTab && driveTab && uploadContent && driveContent) {
-        uploadTab.classList.add('active');
-        driveTab.classList.remove('active');
-        uploadContent.classList.add('active');
-        driveContent.classList.remove('active');
-    }
 }
 
 function loadProductData(productId) {
@@ -479,45 +377,24 @@ function loadProductData(productId) {
     // Handle image
     const imageData = product.image || '';
     const imageDataInput = document.getElementById('product-image-data');
-    const isGoogleDrive = imageData.includes('drive.google.com');
     
-    if (imageData) {
+    if (imageData && imageData.includes('drive.google.com')) {
         imageDataInput.value = imageData;
         
-        if (isGoogleDrive) {
-            // Show Google Drive tab
-            const driveTab = document.querySelector('.method-tab[data-method="drive"]');
-            const uploadTab = document.querySelector('.method-tab[data-method="upload"]');
-            const driveContent = document.getElementById('drive-method');
-            const uploadContent = document.getElementById('upload-method');
-            
-            driveTab.classList.add('active');
-            uploadTab.classList.remove('active');
-            driveContent.classList.add('active');
-            uploadContent.classList.remove('active');
-            
-            // Show in Google Drive preview
-            const drivePreviewImage = document.getElementById('drive-preview-image');
-            const drivePreviewContainer = document.getElementById('drive-preview-container');
-            const driveLinkInput = document.getElementById('drive-link');
-            
-            drivePreviewImage.src = imageData;
-            drivePreviewContainer.style.display = 'block';
-            driveLinkInput.value = imageData;
-            
-            // Hide upload area
-            const uploadArea = document.getElementById('upload-area');
-            if (uploadArea) uploadArea.style.display = 'none';
-            
+        // Show in Google Drive preview
+        const drivePreviewImage = document.getElementById('drive-preview-image');
+        const drivePreviewContainer = document.getElementById('drive-preview-container');
+        const driveLinkInput = document.getElementById('drive-link');
+        
+        drivePreviewImage.src = imageData;
+        drivePreviewContainer.style.display = 'block';
+        
+        // Try to extract and show original link
+        const fileIdMatch = imageData.match(/id=([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch && fileIdMatch[1]) {
+            driveLinkInput.value = `https://drive.google.com/file/d/${fileIdMatch[1]}/view`;
         } else {
-            // Show Base64 image in upload preview
-            const previewImage = document.getElementById('uploaded-preview');
-            const previewContainer = document.getElementById('image-preview-container');
-            const uploadArea = document.getElementById('upload-area');
-            
-            previewImage.src = imageData;
-            previewContainer.style.display = 'block';
-            if (uploadArea) uploadArea.style.display = 'none';
+            driveLinkInput.value = imageData;
         }
     }
 }
@@ -562,7 +439,13 @@ function handleProductSubmit(e) {
         }
         
         if (!imageData) {
-            alert('Please add a product image (upload or Google Drive)');
+            alert('Please add a product image from Google Drive');
+            return;
+        }
+        
+        // Validate it's a Google Drive URL
+        if (!imageData.includes('drive.google.com')) {
+            alert('Please use a valid Google Drive image link');
             return;
         }
         
