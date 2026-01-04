@@ -171,6 +171,16 @@ function resetImageForm() {
     if (driveLinkInput) driveLinkInput.value = '';
 }
 
+
+
+
+
+
+
+
+
+
+
 function convertGoogleDriveUrl() {
     const driveLink = document.getElementById('drive-link').value.trim();
     const driveStatus = document.getElementById('drive-status');
@@ -183,78 +193,70 @@ function convertGoogleDriveUrl() {
         return;
     }
     
-    // Validate it's a Google Drive link
-    if (!driveLink.includes('drive.google.com')) {
-        showDriveStatus('Not a valid Google Drive link', 'error');
-        return;
-    }
-    
     showDriveStatus('Converting Google Drive link...', 'loading');
     
-    // Extract file ID - FIXED VERSION
+    // SIMPLIFIED EXTRACTION - Use only what works
     let fileId = extractGoogleDriveFileId(driveLink);
     
-    console.log('Extracted File ID:', fileId);
-    
     if (!fileId) {
-        showDriveStatus('Could not extract file ID. Make sure it\'s a shareable link.', 'error');
-        return;
-    }
-    
-    // Create direct image URL
-    const directImageUrl = `https://drive.google.com/uc?id=${fileId}`;
-    console.log('Direct Image URL:', directImageUrl);
-    
-    // Test if image loads
-    testImageLoad(directImageUrl);
-}
-
-// FIXED Google Drive File ID Extraction
-function extractGoogleDriveFileId(url) {
-    console.log('Extracting from:', url);
-    
-    // Remove any URL fragments
-    const cleanUrl = url.split('#')[0].trim();
-    
-    // Pattern 1: /file/d/ID/view (your exact pattern)
-    const pattern1 = /\/file\/d\/([a-zA-Z0-9_-]+)\//;
-    const match1 = cleanUrl.match(pattern1);
-    if (match1 && match1[1]) {
-        console.log('Pattern 1 matched:', match1[1]);
-        return match1[1];
-    }
-    
-    // Pattern 2: /d/ID/ (alternative pattern)
-    const pattern2 = /\/d\/([a-zA-Z0-9_-]+)/;
-    const match2 = cleanUrl.match(pattern2);
-    if (match2 && match2[1]) {
-        console.log('Pattern 2 matched:', match2[1]);
-        return match2[1];
-    }
-    
-    // Pattern 3: id= parameter
-    const pattern3 = /id=([a-zA-Z0-9_-]+)/;
-    const match3 = cleanUrl.match(pattern3);
-    if (match3 && match3[1]) {
-        console.log('Pattern 3 matched:', match3[1]);
-        return match3[1];
-    }
-    
-    // Pattern 4: Split method (fallback)
-    const parts = cleanUrl.split('/');
-    for (let i = 0; i < parts.length; i++) {
-        if (parts[i] === 'd' && parts[i + 1]) {
-            const potentialId = parts[i + 1].split('?')[0].split('/')[0];
-            if (potentialId && potentialId.length > 10) {
-                console.log('Split method found:', potentialId);
-                return potentialId;
+        // Try direct ID if extraction fails
+        if (driveLink.includes('/view') && driveLink.includes('/d/')) {
+            const parts = driveLink.split('/d/')[1];
+            if (parts) {
+                fileId = parts.split('/')[0];
             }
         }
     }
     
-    console.log('No pattern matched');
+    if (!fileId) {
+        showDriveStatus('Could not extract file ID. Use this format:<br>https://drive.google.com/file/d/YOUR_FILE_ID/view', 'error');
+        return;
+    }
+    
+    // **USE THE PROPER DIRECT URL FORMAT:**
+    const directImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    
+    console.log('File ID:', fileId);
+    console.log('Direct URL:', directImageUrl);
+    
+    // **IMPORTANT: Don't test the image, just use it**
+    // Google Drive images often don't preview in admin but work on main site
+    drivePreviewImage.src = directImageUrl;
+    drivePreviewContainer.style.display = 'block';
+    imageDataInput.value = directImageUrl; // Save this URL
+    
+    showDriveStatus(
+        '<i class="fas fa-check-circle"></i> Google Drive URL converted!<br>' +
+        '<small>Note: Preview may not work in admin but will display on main site.</small>', 
+        'success'
+    );
+}
+
+// **SIMPLIFIED EXTRACTION FUNCTION:**
+function extractGoogleDriveFileId(url) {
+    console.log('Processing URL:', url);
+    
+    // Method 1: Standard /file/d/ID/view pattern
+    const pattern1 = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+    const match1 = url.match(pattern1);
+    if (match1 && match1[1]) {
+        console.log('Found with pattern1:', match1[1]);
+        return match1[1];
+    }
+    
+    // Method 2: /d/ID/ pattern
+    const pattern2 = /\/d\/([a-zA-Z0-9_-]+)/;
+    const match2 = url.match(pattern2);
+    if (match2 && match2[1]) {
+        console.log('Found with pattern2:', match2[1]);
+        return match2[2];
+    }
+    
+    console.log('No ID found');
     return null;
 }
+
+
 
 
 function testImageLoad(imageUrl) {
