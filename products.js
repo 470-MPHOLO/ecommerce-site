@@ -1,4 +1,4 @@
-// Products data with Base64 image support
+// Products data with Google Drive support
 let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [
     {
         id: 1,
@@ -7,7 +7,7 @@ let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [
         price: 1499.99,
         category: "electronics",
         stock: 10,
-        image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSI4MCIgcj0iNDAiIGZpbGw9IiM0Mjg1ZjQiLz48cmVjdCB4PSI2MCIgeT0iMTIwIiB3aWR0aD0iODAiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iIzQyODVmNCIvPjwvc3ZnPg==",
+        image: "https://drive.google.com/uc?id=1RDUyeQ3tI6QmGCHyVt7I4y-2kHwJ8p7T", // Example Google Drive URL
         dateAdded: "2023-01-01"
     },
     {
@@ -17,7 +17,7 @@ let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [
         price: 2999.99,
         category: "electronics",
         stock: 5,
-        image: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjUwIiBmaWxsPSIjMzQ5ODdiIi8+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSI0MCIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==",
+        image: "https://drive.google.com/uc?id=1sKj9l3mNpOqR8tUvWxYz2AbC3De4F5G6", // Example Google Drive URL
         dateAdded: "2023-01-02"
     }
 ];
@@ -26,9 +26,13 @@ let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [
 function saveProducts() {
     try {
         localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+        console.log('Products saved successfully:', products.length);
         return true;
     } catch (e) {
         console.error('Error saving products:', e);
+        if (e.name === 'QuotaExceededError') {
+            alert('Storage limit reached! Please delete some products or use Google Drive for images.');
+        }
         return false;
     }
 }
@@ -57,32 +61,40 @@ function loadProducts() {
         productCard.setAttribute('data-category', product.category);
         productCard.setAttribute('data-id', product.id);
         
-        // Handle image (Base64 or URL)
-        let imageSrc = product.image;
-        if (!imageSrc.startsWith('data:image') && !imageSrc.startsWith('http')) {
-            // Fallback placeholder
-            imageSrc = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48cGF0aCBkPSJNNzUgODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSAxODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSA4NVpNMTc1IDVIMjVWMjBIMTc1VjVaIiBmaWxsPSIjY2NjIi8+PC9zdmc+';
-        }
+        // Handle both Base64 and Google Drive URLs
+        let imageSrc = product.image || '';
         
-        // Check stock status
-        const stock = product.stock || 0;
-        const outOfStock = stock <= 0;
+        // Check image type
+        const isBase64 = imageSrc.startsWith('data:image');
+        const isGoogleDrive = imageSrc.includes('drive.google.com');
+        
+        // Fallback image for errors
+        const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmNWY1ZjUiLz48cmVjdCB4PSI1MCIgeT0iMzAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTQwIiByeD0iMTAiIGZpbGw9IiNlMGUwZTAiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjEwMCIgcj0iMzAiIGZpbGw9IiNjY2MiLz48cmVjdCB4PSIyMDAiIHk9IjgwIiB3aWR0aD0iNTAiIGhlaWdodD0iNDAiIHJ4PSI1IiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iMTUwIiB5PSIxNzAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+UHJvZHVjdCBJbWFnZTwvdGV4dD48L3N2Zz4=';
+        
+        // Add loading attribute for better performance
+        const loadingAttr = isGoogleDrive ? 'loading="lazy"' : '';
         
         productCard.innerHTML = `
             <div class="product-image">
                 <img src="${imageSrc}" alt="${product.name}" 
-                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlZWUiLz48cGF0aCBkPSJNNzUgODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSAxODVBNTAuMDAwMSA1MC4wMDAwMSAwIDEgMCA3NSA4NVpNMTc1IDVIMjVWMjBIMTc1VjVaIiBmaWxsPSIjY2NjIi8+PC9zdmc+'">
-                ${outOfStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
+                     ${loadingAttr}
+                     onerror="
+                        if (this.src !== '${fallbackImage}') {
+                            this.src = '${fallbackImage}';
+                        }
+                     ">
+                ${(product.stock || 0) <= 0 ? '<div class="out-of-stock">Out of Stock</div>' : ''}
+                ${isGoogleDrive ? '<div class="drive-hosted"><i class="fab fa-google-drive"></i></div>' : ''}
             </div>
             <div class="product-info">
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
                 <div class="product-price">R${product.price.toFixed(2)}</div>
                 <div class="product-stock-badge">
-                    <i class="fas fa-box"></i> ${stock} in stock
+                    <i class="fas fa-box"></i> ${product.stock || 0} in stock
                 </div>
-                <button class="add-to-cart" data-id="${product.id}" ${outOfStock ? 'disabled' : ''}>
-                    ${outOfStock ? '<i class="fas fa-ban"></i> Out of Stock' : '<i class="fas fa-cart-plus"></i> Add to Cart'}
+                <button class="add-to-cart" data-id="${product.id}" ${(product.stock || 0) <= 0 ? 'disabled' : ''}>
+                    ${(product.stock || 0) <= 0 ? '<i class="fas fa-ban"></i> Out of Stock' : '<i class="fas fa-cart-plus"></i> Add to Cart'}
                 </button>
             </div>
         `;
@@ -91,12 +103,14 @@ function loadProducts() {
     });
     
     // Add event listeners to add-to-cart buttons
-    document.querySelectorAll('.add-to-cart:not([disabled])').forEach(button => {
-        button.addEventListener('click', function() {
-            const productId = parseInt(this.getAttribute('data-id'));
-            addToCart(productId);
+    setTimeout(() => {
+        document.querySelectorAll('.add-to-cart:not([disabled])').forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = parseInt(this.getAttribute('data-id'));
+                addToCart(productId);
+            });
         });
-    });
+    }, 100);
 }
 
 // Function to get product by ID
@@ -124,18 +138,35 @@ function addProduct(product) {
 
 // Function to update a product
 function updateProduct(id, updatedProduct) {
-    const index = products.findIndex(p => p.id === id);
-    if (index !== -1) {
-        // Preserve original dateAdded if not provided
-        if (!updatedProduct.dateAdded) {
-            updatedProduct.dateAdded = products[index].dateAdded;
-        }
+    try {
+        console.log('Attempting to update product ID:', id);
         
-        products[index] = { ...products[index], ...updatedProduct };
-        saveProducts();
-        return true;
+        const index = products.findIndex(p => p.id === id);
+        
+        if (index !== -1) {
+            // Preserve original dateAdded if not provided
+            if (!updatedProduct.dateAdded) {
+                updatedProduct.dateAdded = products[index].dateAdded;
+            }
+            
+            // Keep original ID
+            updatedProduct.id = id;
+            
+            products[index] = { ...products[index], ...updatedProduct };
+            console.log('Product updated successfully:', products[index].name);
+            
+            const saveResult = saveProducts();
+            console.log('Save result:', saveResult);
+            
+            return saveResult;
+        } else {
+            console.error('Product not found with ID:', id);
+            return false;
+        }
+    } catch (e) {
+        console.error('Update error:', e);
+        return false;
     }
-    return false;
 }
 
 // Function to delete a product
