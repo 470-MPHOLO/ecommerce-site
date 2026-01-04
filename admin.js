@@ -431,6 +431,8 @@ function loadProductData(productId) {
     }
 }
 
+
+
 function handleProductSubmit(e) {
     e.preventDefault();
     
@@ -458,7 +460,7 @@ function handleProductSubmit(e) {
             return;
         }
         
-        if (!price || price <= 0) {
+        if (!price || price <= 0 || isNaN(price)) {
             alert('Please enter a valid price greater than 0');
             document.getElementById('product-price').focus();
             return;
@@ -475,11 +477,14 @@ function handleProductSubmit(e) {
             return;
         }
         
-        // Validate it's a Google Drive URL
-        if (!imageData.includes('drive.google.com')) {
-            alert('Please use a valid Google Drive image link');
-            return;
-        }
+        // Debug log
+        console.log('Submitting product data:', {
+            id: productId,
+            name: name,
+            price: price,
+            category: category,
+            image: imageData.substring(0, 50) + '...'
+        });
         
         const productData = {
             name: name,
@@ -496,10 +501,12 @@ function handleProductSubmit(e) {
         
         if (productId) {
             // Update existing product
+            console.log('Updating product ID:', productId);
             success = updateProduct(parseInt(productId), productData);
             message = success ? 'Product updated successfully!' : 'Error updating product';
         } else {
             // Add new product
+            console.log('Adding new product');
             const newId = addProduct(productData);
             success = !!newId;
             message = success ? 'Product added successfully!' : 'Error adding product';
@@ -516,6 +523,7 @@ function handleProductSubmit(e) {
             }
         } else {
             showNotification(message, 'error');
+            console.error('Save failed. Check console for details.');
         }
         
     } catch (error) {
@@ -523,6 +531,9 @@ function handleProductSubmit(e) {
         alert('Error: ' + error.message);
     }
 }
+
+
+
 
 function closeProductModal() {
     const modal = document.getElementById('product-modal');
