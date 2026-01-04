@@ -1,6 +1,8 @@
 // Admin JavaScript with Google Drive Integration ONLY
+console.log("=== ADMIN.JS LOADED ===");
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Authentication Check
+    console.log("✅ DOM fully loaded");
     checkAdminAuth();
 });
 
@@ -38,6 +40,8 @@ function checkAdminAuth() {
 }
 
 function initAdminPanel() {
+    console.log("🟢 Initializing admin panel");
+    
     // Load products
     loadAdminProducts();
     
@@ -46,9 +50,13 @@ function initAdminPanel() {
     
     // Setup Google Drive upload only
     setupGoogleDriveUpload();
+    
+    console.log("✅ Admin panel initialized");
 }
 
 function setupEventListeners() {
+    console.log("🟢 Setting up event listeners");
+    
     // Logout button
     const logoutBtn = document.getElementById('logout-admin');
     if (logoutBtn) {
@@ -74,7 +82,6 @@ function setupEventListeners() {
     const closeModal = document.querySelector('.close-modal');
     const closeModalBtn = document.querySelector('.close-modal-btn');
     const productModal = document.getElementById('product-modal');
-    const deleteModal = document.getElementById('delete-modal');
     
     if (closeModal) {
         closeModal.addEventListener('click', function() {
@@ -96,15 +103,32 @@ function setupEventListeners() {
             productModal.style.display = 'none';
             resetProductForm();
         }
-        if (e.target === deleteModal) {
-            deleteModal.style.display = 'none';
+        if (e.target === document.getElementById('delete-modal')) {
+            document.getElementById('delete-modal').style.display = 'none';
         }
     });
     
-    // Product form submission
+    // Product form submission - FIXED VERSION
     const productForm = document.getElementById('product-form');
     if (productForm) {
+        console.log("✅ Found product form");
+        // Remove any existing listeners first
+        productForm.removeEventListener('submit', handleProductSubmit);
+        // Add new listener
         productForm.addEventListener('submit', handleProductSubmit);
+    } else {
+        console.error("❌ Product form not found!");
+    }
+    
+    // Direct save button listener as backup
+    const saveBtn = document.getElementById('save-product-btn');
+    if (saveBtn) {
+        console.log("✅ Found save button");
+        saveBtn.addEventListener('click', function(e) {
+            console.log("🎯 Save button clicked directly");
+            e.preventDefault();
+            handleProductSubmit(e);
+        });
     }
     
     // Delete modal buttons
@@ -113,7 +137,7 @@ function setupEventListeners() {
     
     if (cancelDeleteBtn) {
         cancelDeleteBtn.addEventListener('click', function() {
-            deleteModal.style.display = 'none';
+            document.getElementById('delete-modal').style.display = 'none';
         });
     }
     
@@ -122,13 +146,15 @@ function setupEventListeners() {
             const productId = parseInt(this.getAttribute('data-product-id'));
             if (productId) {
                 deleteProduct(productId);
-                deleteModal.style.display = 'none';
+                document.getElementById('delete-modal').style.display = 'none';
             }
         });
     }
 }
 
 function setupGoogleDriveUpload() {
+    console.log("🟢 Setting up Google Drive upload");
+    
     // Google Drive conversion
     const convertDriveBtn = document.getElementById('convert-drive-btn');
     const driveLinkInput = document.getElementById('drive-link');
@@ -171,16 +197,6 @@ function resetImageForm() {
     if (driveLinkInput) driveLinkInput.value = '';
 }
 
-
-
-
-
-
-
-
-
-
-
 function convertGoogleDriveUrl() {
     const driveLink = document.getElementById('drive-link').value.trim();
     const driveStatus = document.getElementById('drive-status');
@@ -193,161 +209,72 @@ function convertGoogleDriveUrl() {
         return;
     }
     
-    showDriveStatus('Converting Google Drive link...', 'loading');
-    
-    // SIMPLIFIED EXTRACTION - Use only what works
-    let fileId = extractGoogleDriveFileId(driveLink);
-    
-    if (!fileId) {
-        // Try direct ID if extraction fails
-        if (driveLink.includes('/view') && driveLink.includes('/d/')) {
-            const parts = driveLink.split('/d/')[1];
-            if (parts) {
-                fileId = parts.split('/')[0];
-            }
-        }
-    }
-    
-    if (!fileId) {
-        showDriveStatus('Could not extract file ID. Use this format:<br>https://drive.google.com/file/d/YOUR_FILE_ID/view', 'error');
+    if (!driveLink.includes('drive.google.com')) {
+        showDriveStatus('Not a valid Google Drive link', 'error');
         return;
     }
     
-    // **USE THE PROPER DIRECT URL FORMAT:**
+    showDriveStatus('Converting Google Drive link...', 'loading');
+    
+    // Extract file ID
+    let fileId = extractGoogleDriveFileId(driveLink);
+    
+    console.log('Extracted File ID:', fileId);
+    
+    if (!fileId) {
+        showDriveStatus('Could not extract file ID. Make sure link is in format:<br>https://drive.google.com/file/d/FILE_ID/view', 'error');
+        return;
+    }
+    
+    // Create direct image URL
     const directImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    console.log('Direct Image URL:', directImageUrl);
     
-    console.log('File ID:', fileId);
-    console.log('Direct URL:', directImageUrl);
-    
-    // **IMPORTANT: Don't test the image, just use it**
-    // Google Drive images often don't preview in admin but work on main site
+    // Save the URL immediately (don't wait for preview)
+    imageDataInput.value = directImageUrl;
     drivePreviewImage.src = directImageUrl;
     drivePreviewContainer.style.display = 'block';
-    imageDataInput.value = directImageUrl; // Save this URL
     
     showDriveStatus(
-        '<i class="fas fa-check-circle"></i> Google Drive URL converted!<br>' +
-        '<small>Note: Preview may not work in admin but will display on main site.</small>', 
+        '<i class="fas fa-check-circle"></i> Google Drive image ready!<br>' +
+        '<small>Image saved. You can now add the product.</small>', 
         'success'
     );
 }
 
-// **SIMPLIFIED EXTRACTION FUNCTION:**
 function extractGoogleDriveFileId(url) {
-    console.log('Processing URL:', url);
+    console.log('Extracting from:', url);
     
-    // Method 1: Standard /file/d/ID/view pattern
-    const pattern1 = /\/file\/d\/([a-zA-Z0-9_-]+)/;
-    const match1 = url.match(pattern1);
-    if (match1 && match1[1]) {
-        console.log('Found with pattern1:', match1[1]);
-        return match1[1];
+    // Clean the URL
+    const cleanUrl = url.split('?')[0].split('#')[0].trim();
+    
+    // Try different patterns
+    const patterns = [
+        /\/file\/d\/([a-zA-Z0-9_-]+)/,
+        /\/d\/([a-zA-Z0-9_-]+)/,
+        /id=([a-zA-Z0-9_-]+)/
+    ];
+    
+    for (let pattern of patterns) {
+        const match = cleanUrl.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
     }
     
-    // Method 2: /d/ID/ pattern
-    const pattern2 = /\/d\/([a-zA-Z0-9_-]+)/;
-    const match2 = url.match(pattern2);
-    if (match2 && match2[1]) {
-        console.log('Found with pattern2:', match2[1]);
-        return match2[2];
+    // Fallback: split by slashes
+    const parts = cleanUrl.split('/');
+    for (let i = 0; i < parts.length; i++) {
+        if (parts[i] === 'd' && i + 1 < parts.length) {
+            const potentialId = parts[i + 1];
+            if (potentialId && potentialId.length > 10) {
+                return potentialId;
+            }
+        }
     }
     
-    console.log('No ID found');
     return null;
 }
-
-
-
-
-function testImageLoad(imageUrl) {
-    const driveStatus = document.getElementById('drive-status');
-    const drivePreviewContainer = document.getElementById('drive-preview-container');
-    const drivePreviewImage = document.getElementById('drive-preview-image');
-    const imageDataInput = document.getElementById('product-image-data');
-    
-    console.log('Testing image load:', imageUrl);
-    
-    // Create a CORS proxy URL
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`;
-    console.log('Using proxy URL:', proxyUrl);
-    
-    const img = new Image();
-    
-    img.onload = function() {
-        console.log('✅ Image loaded successfully via proxy!');
-        
-        // IMPORTANT: Save the ORIGINAL Google Drive URL, not proxy URL
-        drivePreviewImage.src = imageUrl; // Use original URL for preview
-        drivePreviewContainer.style.display = 'block';
-        
-        // Save the ORIGINAL Google Drive URL
-        imageDataInput.value = imageUrl;
-        
-        showDriveStatus('<i class="fas fa-check-circle"></i> Google Drive image loaded successfully!', 'success');
-    };
-    
-    img.onerror = function() {
-        console.log('❌ Image failed to load even with proxy');
-        console.log('Testing without proxy as fallback...');
-        
-        // Try without proxy as fallback
-        const img2 = new Image();
-        img2.onload = function() {
-            console.log('✅ Image loads without proxy!');
-            drivePreviewImage.src = imageUrl;
-            drivePreviewContainer.style.display = 'block';
-            imageDataInput.value = imageUrl;
-            showDriveStatus('<i class="fas fa-check-circle"></i> Google Drive image loaded successfully!', 'success');
-        };
-        img2.onerror = function() {
-            console.log('❌ Both methods failed');
-            
-            // Even if preview fails, still save the URL
-            // Google Drive links often work on the main site even if preview fails
-            imageDataInput.value = imageUrl;
-            
-            showDriveStatus(
-                '<i class="fas fa-exclamation-triangle"></i> Preview failed but URL saved.<br>' +
-                '<strong>Note:</strong> Google Drive images may not preview but will work on the main site.<br><br>' +
-                '<a href="' + imageUrl + '" target="_blank" style="color: #4285f4; text-decoration: underline;">' +
-                'Click to test link directly</a><br><br>' +
-                '<button onclick="forceSaveImage(\'' + imageUrl + '\')" style="background: #4caf50; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">' +
-                'Save Anyway</button>', 
-                'warning'
-            );
-            
-            drivePreviewContainer.style.display = 'none';
-        };
-        img2.src = imageUrl;
-    };
-    
-    // Start loading with proxy first
-    img.src = proxyUrl;
-}
-
-// helper function
-function forceSaveImage(imageUrl) {
-    const imageDataInput = document.getElementById('product-image-data');
-    const drivePreviewContainer = document.getElementById('drive-preview-container');
-    const drivePreviewImage = document.getElementById('drive-preview-image');
-    const driveStatus = document.getElementById('drive-status');
-    
-    imageDataInput.value = imageUrl;
-    drivePreviewImage.src = imageUrl;
-    drivePreviewContainer.style.display = 'block';
-    
-    showDriveStatus('<i class="fas fa-check-circle"></i> URL saved successfully!', 'success');
-    
-    // Clear the warning message
-    setTimeout(() => {
-        driveStatus.style.display = 'none';
-    }, 3000);
-}
-
-
-
-
-
 
 function showDriveStatus(message, type) {
     const driveStatus = document.getElementById('drive-status');
@@ -360,6 +287,8 @@ function showDriveStatus(message, type) {
 }
 
 function openProductModal(productId = null) {
+    console.log("Opening product modal, ID:", productId);
+    
     const modal = document.getElementById('product-modal');
     const modalTitle = document.getElementById('modal-title');
     const productIdInput = document.getElementById('product-id');
@@ -380,8 +309,12 @@ function openProductModal(productId = null) {
 }
 
 function resetProductForm() {
+    console.log("Resetting product form");
+    
     const form = document.getElementById('product-form');
-    if (form) form.reset();
+    if (form) {
+        form.reset();
+    }
     
     // Reset image previews
     const drivePreviewContainer = document.getElementById('drive-preview-container');
@@ -396,10 +329,15 @@ function resetProductForm() {
 }
 
 function loadProductData(productId) {
+    console.log("Loading product data for ID:", productId);
+    
     const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
     const product = products.find(p => p.id === productId);
     
-    if (!product) return;
+    if (!product) {
+        console.error("Product not found:", productId);
+        return;
+    }
     
     // Fill form fields
     document.getElementById('product-name').value = product.name || '';
@@ -434,114 +372,148 @@ function loadProductData(productId) {
 }
 
 function handleProductSubmit(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    
+    console.log("=== PRODUCT FORM SUBMISSION STARTED ===");
     
     try {
         const productId = document.getElementById('product-id').value;
         const imageData = document.getElementById('product-image-data').value;
         
-        // Validate required fields
+        // Get form values
         const name = document.getElementById('product-name').value.trim();
         const description = document.getElementById('product-description').value.trim();
-        const price = parseFloat(document.getElementById('product-price').value);
+        const priceValue = document.getElementById('product-price').value;
         const category = document.getElementById('product-category').value;
-        const stock = parseInt(document.getElementById('product-stock').value) || 1;
+        const stockValue = document.getElementById('product-stock').value;
         
-        // Show specific error messages
-        if (!name) {
-            alert('Please enter a product name');
-            document.getElementById('product-name').focus();
-            return;
-        }
-        
-        if (!description) {
-            alert('Please enter a product description');
-            document.getElementById('product-description').focus();
-            return;
-        }
-        
-        if (!price || price <= 0 || isNaN(price)) {
-            alert('Please enter a valid price greater than 0');
-            document.getElementById('product-price').focus();
-            return;
-        }
-        
-        if (!category) {
-            alert('Please select a category');
-            document.getElementById('product-category').focus();
-            return;
-        }
-        
-        if (!imageData || !imageData.includes('drive.google.com')) {
-    alert('Please add a valid Google Drive image link.');
-    return;
-}
-        
-        // Debug log
-        console.log('Submitting product data:', {
-            id: productId,
+        console.log("Form Data Collected:", {
+            productId: productId,
             name: name,
-            price: price,
+            description: description.substring(0, 30) + '...',
+            price: priceValue,
             category: category,
-            image: imageData.substring(0, 50) + '...'
+            stock: stockValue,
+            image: imageData ? 'Yes' : 'No'
         });
         
+        // Validation
+        let error = '';
+        if (!name) error = 'Please enter a product name';
+        else if (!description) error = 'Please enter a product description';
+        else if (!priceValue || parseFloat(priceValue) <= 0 || isNaN(parseFloat(priceValue))) 
+            error = 'Please enter a valid price greater than 0';
+        else if (!category) error = 'Please select a category';
+        else if (!imageData || !imageData.includes('drive.google.com')) 
+            error = 'Please add a valid Google Drive image link';
+        
+        if (error) {
+            console.error("Validation error:", error);
+            alert(error);
+            return false;
+        }
+        
+        // Prepare product data
         const productData = {
             name: name,
             description: description,
-            price: price,
+            price: parseFloat(priceValue),
             category: category,
-            stock: stock,
+            stock: parseInt(stockValue) || 1,
             image: imageData,
             dateAdded: new Date().toISOString()
         };
         
+        console.log("Product Data to Save:", productData);
+        
         let success = false;
         let message = '';
         
+        // Load current products
+        let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+        
         if (productId) {
             // Update existing product
-            console.log('Updating product ID:', productId);
-            success = updateProduct(parseInt(productId), productData);
-            message = success ? 'Product updated successfully!' : 'Error updating product';
+            console.log("Updating existing product ID:", productId);
+            const index = products.findIndex(p => p.id === parseInt(productId));
+            
+            if (index !== -1) {
+                productData.id = parseInt(productId);
+                // Keep original dateAdded
+                productData.dateAdded = products[index].dateAdded || new Date().toISOString();
+                products[index] = productData;
+                success = true;
+                message = 'Product updated successfully!';
+                console.log("✅ Product updated");
+            } else {
+                console.error("Product not found for update:", productId);
+                message = 'Product not found!';
+            }
         } else {
             // Add new product
-            console.log('Adding new product');
-            const newId = addProduct(productData);
-            success = !!newId;
-            message = success ? 'Product added successfully!' : 'Error adding product';
+            console.log("Adding new product");
+            const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+            productData.id = newId;
+            products.push(productData);
+            success = true;
+            message = 'Product added successfully!';
+            console.log("✅ New product added with ID:", newId);
         }
         
+        // Save to localStorage
         if (success) {
-            showNotification(message, 'success');
-            loadAdminProducts();
-            closeProductModal();
-            
-            // Update main store if open
-            if (typeof loadProducts === 'function') {
-                loadProducts();
+            try {
+                localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+                console.log("✅ Products saved to localStorage, total:", products.length);
+                
+                // Show success message
+                showNotification(message, 'success');
+                
+                // Refresh admin products list
+                loadAdminProducts();
+                
+                // Close modal after delay
+                setTimeout(() => {
+                    closeProductModal();
+                }, 1000);
+                
+                // Refresh main store if open
+                if (typeof loadProducts === 'function') {
+                    console.log("Refreshing main store products");
+                    loadProducts();
+                }
+                
+            } catch (saveError) {
+                console.error("Save error:", saveError);
+                if (saveError.name === 'QuotaExceededError') {
+                    showNotification('Storage full! Please delete some products.', 'error');
+                } else {
+                    showNotification('Error saving product: ' + saveError.message, 'error');
+                }
             }
         } else {
             showNotification(message, 'error');
-            console.error('Save failed. Check console for details.');
         }
         
     } catch (error) {
-        console.error('Form submission error:', error);
-        alert('Error: ' + error.message);
+        console.error("Form submission error:", error);
+        showNotification('Error: ' + error.message, 'error');
     }
+    
+    return false;
 }
 
-
-
-
 function closeProductModal() {
+    console.log("Closing product modal");
+    
     const modal = document.getElementById('product-modal');
     modal.style.display = 'none';
     resetProductForm();
 }
 
 function loadAdminProducts() {
+    console.log("Loading admin products");
+    
     const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
     const productsGrid = document.getElementById('admin-products-grid');
     const emptyState = document.getElementById('empty-state');
@@ -551,6 +523,7 @@ function loadAdminProducts() {
     
     // Update count
     productCount.textContent = products.length;
+    console.log("Total products:", products.length);
     
     if (products.length === 0) {
         productsGrid.innerHTML = '';
@@ -621,9 +594,13 @@ function loadAdminProducts() {
             confirmDeleteProduct(productId);
         });
     });
+    
+    console.log("✅ Admin products loaded");
 }
 
 function confirmDeleteProduct(productId) {
+    console.log("Confirming delete for product:", productId);
+    
     const deleteModal = document.getElementById('delete-modal');
     const confirmDeleteBtn = document.getElementById('confirm-delete');
     
@@ -633,7 +610,31 @@ function confirmDeleteProduct(productId) {
     }
 }
 
+function deleteProduct(productId) {
+    console.log("Deleting product ID:", productId);
+    
+    let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+    const initialLength = products.length;
+    
+    products = products.filter(p => p.id !== productId);
+    
+    if (products.length < initialLength) {
+        localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+        showNotification('Product deleted successfully!', 'success');
+        loadAdminProducts();
+        
+        // Refresh main store if open
+        if (typeof loadProducts === 'function') {
+            loadProducts();
+        }
+    } else {
+        showNotification('Product not found!', 'error');
+    }
+}
+
 function showNotification(message, type = 'info') {
+    console.log("Showing notification:", type, message);
+    
     // Remove existing notifications
     const existingNotifications = document.querySelectorAll('.notification');
     existingNotifications.forEach(notification => {
@@ -744,3 +745,6 @@ function showNotification(message, type = 'info') {
         }
     }, 5000);
 }
+
+// Add debug logging at startup
+console.log("🟡 Admin JS ready. Check console for logs.");
