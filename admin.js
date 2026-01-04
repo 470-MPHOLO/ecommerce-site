@@ -256,6 +256,7 @@ function extractGoogleDriveFileId(url) {
     return null;
 }
 
+
 function testImageLoad(imageUrl) {
     const driveStatus = document.getElementById('drive-status');
     const drivePreviewContainer = document.getElementById('drive-preview-container');
@@ -264,56 +265,87 @@ function testImageLoad(imageUrl) {
     
     console.log('Testing image load:', imageUrl);
     
+    // Create a CORS proxy URL
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`;
+    console.log('Using proxy URL:', proxyUrl);
+    
     const img = new Image();
     
     img.onload = function() {
-        console.log('✅ Image loaded successfully!');
+        console.log('✅ Image loaded successfully via proxy!');
         
-        // Image loaded successfully
-        drivePreviewImage.src = imageUrl;
+        // IMPORTANT: Save the ORIGINAL Google Drive URL, not proxy URL
+        drivePreviewImage.src = imageUrl; // Use original URL for preview
         drivePreviewContainer.style.display = 'block';
         
-        // Save the Google Drive URL
+        // Save the ORIGINAL Google Drive URL
         imageDataInput.value = imageUrl;
         
         showDriveStatus('<i class="fas fa-check-circle"></i> Google Drive image loaded successfully!', 'success');
     };
     
     img.onerror = function() {
-        console.log('❌ Image failed to load');
+        console.log('❌ Image failed to load even with proxy');
+        console.log('Testing without proxy as fallback...');
         
-        // Image failed to load
-        showDriveStatus(
-            '<i class="fas fa-exclamation-triangle"></i> Failed to load image.<br>' +
-            '<strong>Please check:</strong><br>' +
-            '1. File is set to "Anyone with the link"<br>' +
-            '2. Link is to an image file (jpg, png, etc.)<br>' +
-            '3. File exists in Google Drive<br><br>' +
-            '<a href="' + imageUrl + '" target="_blank" style="color: #4285f4; text-decoration: underline;">' +
-            'Click here to test the link directly</a>', 
-            'error'
-        );
-        
-        drivePreviewContainer.style.display = 'none';
-        imageDataInput.value = '';
-    };
-    
-    // Set timeout for slow connections
-    setTimeout(() => {
-        if (!img.complete) {
+        // Try without proxy as fallback
+        const img2 = new Image();
+        img2.onload = function() {
+            console.log('✅ Image loads without proxy!');
+            drivePreviewImage.src = imageUrl;
+            drivePreviewContainer.style.display = 'block';
+            imageDataInput.value = imageUrl;
+            showDriveStatus('<i class="fas fa-check-circle"></i> Google Drive image loaded successfully!', 'success');
+        };
+        img2.onerror = function() {
+            console.log('❌ Both methods failed');
+            
+            // Even if preview fails, still save the URL
+            // Google Drive links often work on the main site even if preview fails
+            imageDataInput.value = imageUrl;
+            
             showDriveStatus(
-                '<i class="fas fa-exclamation-triangle"></i> Taking too long to load.<br>' +
-                'Image might be very large.<br>' +
+                '<i class="fas fa-exclamation-triangle"></i> Preview failed but URL saved.<br>' +
+                '<strong>Note:</strong> Google Drive images may not preview but will work on the main site.<br><br>' +
                 '<a href="' + imageUrl + '" target="_blank" style="color: #4285f4; text-decoration: underline;">' +
-                'Try opening link directly</a>', 
+                'Click to test link directly</a><br><br>' +
+                '<button onclick="forceSaveImage(\'' + imageUrl + '\')" style="background: #4caf50; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">' +
+                'Save Anyway</button>', 
                 'warning'
             );
-        }
-    }, 5000);
+            
+            drivePreviewContainer.style.display = 'none';
+        };
+        img2.src = imageUrl;
+    };
     
-    // Start loading
-    img.src = imageUrl;
+    // Start loading with proxy first
+    img.src = proxyUrl;
 }
+
+// helper function
+function forceSaveImage(imageUrl) {
+    const imageDataInput = document.getElementById('product-image-data');
+    const drivePreviewContainer = document.getElementById('drive-preview-container');
+    const drivePreviewImage = document.getElementById('drive-preview-image');
+    const driveStatus = document.getElementById('drive-status');
+    
+    imageDataInput.value = imageUrl;
+    drivePreviewImage.src = imageUrl;
+    drivePreviewContainer.style.display = 'block';
+    
+    showDriveStatus('<i class="fas fa-check-circle"></i> URL saved successfully!', 'success');
+    
+    // Clear the warning message
+    setTimeout(() => {
+        driveStatus.style.display = 'none';
+    }, 3000);
+}
+
+
+
+
+
 
 function showDriveStatus(message, type) {
     const driveStatus = document.getElementById('drive-status');
