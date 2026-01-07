@@ -21,7 +21,7 @@ function initCart() {
     const checkoutBtn = document.getElementById('checkout-btn');
     if (checkoutBtn) {
         checkoutBtn.addEventListener('click', function() {
-            proceedToCheckout();
+            showCheckoutForm();
         });
     }
     
@@ -49,7 +49,209 @@ function initCart() {
     }
 }
 
-// Add item to cart
+// Show checkout form
+function showCheckoutForm() {
+    if (cart.length === 0) {
+        alert('Your cart is empty!');
+        return;
+    }
+    
+    // Create checkout form modal
+    const modalHTML = `
+        <div id="checkout-modal" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        ">
+            <div style="
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                width: 90%;
+                max-width: 500px;
+                max-height: 90vh;
+                overflow-y: auto;
+            ">
+                <h2 style="margin-top: 0;">📝 Checkout</h2>
+                
+                <!-- Contact Form -->
+                <form id="contact-form">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                            Full Name *
+                        </label>
+                        <input type="text" id="customer-name" required 
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                               placeholder="Enter your full name">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                            Phone Number *
+                        </label>
+                        <input type="tel" id="customer-phone" required 
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                               placeholder="+266 123 4567">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                            Delivery Address *
+                        </label>
+                        <textarea id="customer-address" required rows="3"
+                                  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                                  placeholder="Full address including street, city, etc."></textarea>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                            Delivery Notes (Optional)
+                        </label>
+                        <textarea id="delivery-notes" rows="2"
+                                  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                                  placeholder="Any special instructions?"></textarea>
+                    </div>
+                    
+                    <!-- Order Summary -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                        <h3 style="margin-top: 0;">📦 Order Summary</h3>
+                        ${generateOrderSummary()}
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="closeCheckoutModal()" 
+                                style="flex: 1; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 5px;">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                style="flex: 1; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px;">
+                            Complete Order via WhatsApp
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Handle form submission
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        completeOrder();
+    });
+}
+
+// Generate order summary HTML
+function generateOrderSummary() {
+    let total = 0;
+    let summary = '';
+    
+    cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        summary += `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>${item.name} × ${item.quantity}</span>
+                <span>R${itemTotal.toFixed(2)}</span>
+            </div>
+        `;
+    });
+    
+    summary += `
+        <div style="border-top: 1px solid #ddd; margin-top: 10px; padding-top: 10px; font-weight: bold;">
+            <div style="display: flex; justify-content: space-between;">
+                <span>Total:</span>
+                <span>R${total.toFixed(2)}</span>
+            </div>
+        </div>
+    `;
+    
+    return summary;
+}
+
+// Complete order via WhatsApp
+function completeOrder() {
+    // Get form values
+    const name = document.getElementById('customer-name').value.trim();
+    const phone = document.getElementById('customer-phone').value.trim();
+    const address = document.getElementById('customer-address').value.trim();
+    const notes = document.getElementById('delivery-notes').value.trim();
+    
+    // Validation
+    if (!name || !phone || !address) {
+        alert('Please fill all required fields');
+        return;
+    }
+    
+    // Create WhatsApp message
+    let whatsappMessage = "🛍️ *NEW ORDER - SHOPEASY*\n\n";
+    whatsappMessage += "*Customer Information:*\n";
+    whatsappMessage += `👤 Name: ${name}\n`;
+    whatsappMessage += `📞 Phone: ${phone}\n`;
+    whatsappMessage += `📍 Address: ${address}\n`;
+    if (notes) {
+        whatsappMessage += `📝 Notes: ${notes}\n`;
+    }
+    
+    whatsappMessage += "\n────────────────\n\n";
+    whatsappMessage += "*Order Details:*\n";
+    whatsappMessage += "────────────────\n";
+    
+    let total = 0;
+    cart.forEach((item, index) => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        whatsappMessage += `\n${index + 1}. *${item.name}*\n`;
+        whatsappMessage += `   Quantity: ${item.quantity} × R${item.price.toFixed(2)}\n`;
+        whatsappMessage += `   Subtotal: R${itemTotal.toFixed(2)}\n`;
+    });
+    
+    whatsappMessage += "\n────────────────\n";
+    whatsappMessage += `💰 *TOTAL: R${total.toFixed(2)}*\n\n`;
+    whatsappMessage += `📅 Order Date: ${new Date().toLocaleDateString('en-GB')}\n`;
+    whatsappMessage += `⏰ Order Time: ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}\n`;
+    whatsappMessage += `🆔 Order ID: ORD${Date.now().toString().slice(-8)}`;
+    
+    // Encode for WhatsApp URL
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    
+    // YOUR WHATSAPP NUMBER
+    const whatsappNumber = "+26659534172";
+    
+    // Open WhatsApp
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
+    
+    // Clear cart
+    cart = [];
+    saveCart();
+    updateCartCount();
+    loadCartItems();
+    
+    // Close modal
+    closeCheckoutModal();
+    
+    // Show confirmation
+    alert('✅ Order sent via WhatsApp! We will contact you shortly.');
+}
+
+// Close checkout modal
+function closeCheckoutModal() {
+    const modal = document.getElementById('checkout-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Add item to cart (keep existing)
 function addToCart(productId) {
     const product = getProductById(productId);
     
@@ -81,34 +283,48 @@ function addToCart(productId) {
         });
     }
     
-    // Save to localStorage
     saveCart();
-    
-    // Update UI
     updateCartCount();
     loadCartItems();
     
-    // Show notification (using alert for now)
-    alert(`${product.name} added to cart!`);
+    // Show success message
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.innerHTML = `
+        <i class="fas fa-check-circle"></i> ${product.name} added to cart!
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }
 
-// Remove item from cart
+// Remove item from cart (keep existing)
 function removeFromCart(productId) {
     cart = cart.filter(item => item.id !== productId);
     saveCart();
     updateCartCount();
     loadCartItems();
-    alert('Item removed from cart');
 }
 
-// Update item quantity
+// Update item quantity (keep existing)
 function updateQuantity(productId, newQuantity) {
     if (newQuantity < 1) {
         removeFromCart(productId);
         return;
     }
     
-    // Check stock
     const product = getProductById(productId);
     const stock = product ? (product.stock || 0) : 0;
     
@@ -126,7 +342,7 @@ function updateQuantity(productId, newQuantity) {
     }
 }
 
-// Save cart to localStorage
+// Save cart (keep existing)
 function saveCart() {
     try {
         localStorage.setItem('shopEasyCart', JSON.stringify(cart));
@@ -135,7 +351,7 @@ function saveCart() {
     }
 }
 
-// Update cart count in header
+// Update cart count (keep existing)
 function updateCartCount() {
     const cartCount = document.getElementById('cart-count');
     if (cartCount) {
@@ -145,7 +361,7 @@ function updateCartCount() {
     }
 }
 
-// Load cart items in sidebar
+// Load cart items (keep existing, but add checkout button)
 function loadCartItems() {
     const cartItemsContainer = document.getElementById('cart-items');
     const cartTotalElement = document.getElementById('cart-total');
@@ -171,7 +387,6 @@ function loadCartItems() {
         const itemTotal = item.price * item.quantity;
         total += itemTotal;
         
-        // Get product stock
         const product = getProductById(item.id);
         const stock = product ? (product.stock || 0) : 0;
         const maxQuantity = Math.min(stock, 99);
@@ -204,10 +419,26 @@ function loadCartItems() {
         `;
     });
     
+    // Add checkout button
+    cartHTML += `
+        <div class="cart-checkout-section">
+            <div class="cart-total-row">
+                <span>Total:</span>
+                <span id="cart-total-final">R${total.toFixed(2)}</span>
+            </div>
+            <button id="checkout-btn" class="checkout-btn">
+                <i class="fab fa-whatsapp"></i> Checkout via WhatsApp
+            </button>
+        </div>
+    `;
+    
     cartItemsContainer.innerHTML = cartHTML;
     cartTotalElement.textContent = `R${total.toFixed(2)}`;
     
-    // Add event listeners
+    // Add checkout button listener
+    document.getElementById('checkout-btn').addEventListener('click', showCheckoutForm);
+    
+    // Add event listeners for quantity buttons (keep existing)
     document.querySelectorAll('.decrease').forEach(button => {
         button.addEventListener('click', function() {
             const productId = parseInt(this.getAttribute('data-id'));
@@ -242,55 +473,4 @@ function loadCartItems() {
             removeFromCart(productId);
         });
     });
-}
-
-// Proceed to checkout
-function proceedToCheckout() {
-    if (cart.length === 0) {
-        alert('Your cart is empty!');
-        return;
-    }
-    
-    // Calculate total
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    // Create order summary
-    let orderSummary = "🛍️ SHOPEASY ORDER SUMMARY\n\n";
-    orderSummary += "Order Details:\n";
-    orderSummary += "────────────────\n";
-    
-    cart.forEach((item, index) => {
-        orderSummary += `${index + 1}. ${item.name}\n`;
-        orderSummary += `   Quantity: ${item.quantity} × R${item.price.toFixed(2)} = R${(item.price * item.quantity).toFixed(2)}\n\n`;
-    });
-    
-    orderSummary += "────────────────\n";
-    orderSummary += `TOTAL: R${total.toFixed(2)}\n\n`;
-    orderSummary += "📞 Contact Information Required:\n";
-    orderSummary += "────────────────\n";
-    orderSummary += "• Full Name:\n";
-    orderSummary += "• Phone Number:\n";
-    orderSummary += "• Delivery Address:\n";
-    orderSummary += "• Preferred Delivery Date/Time:\n\n";
-    orderSummary += "Please send this information to complete your order.";
-    
-    // Show order summary
-    alert("Proceed to checkout?\n\nCopy this order summary:\n\n" + orderSummary);
-    
-    // Option to copy to clipboard
-    if (navigator.clipboard) {
-        const copy = confirm("Copy order summary to clipboard?");
-        if (copy) {
-            navigator.clipboard.writeText(orderSummary)
-                .then(() => alert("Order copied to clipboard!"))
-                .catch(() => alert("Could not copy to clipboard"));
-        }
-    }
-    
-    // WhatsApp option
-    const whatsapp = confirm("Send order via WhatsApp?");
-    if (whatsapp) {
-        const whatsappMessage = encodeURIComponent(orderSummary);
-        window.open(`https://wa.me/27123456789?text=${whatsappMessage}`, '_blank');
-    }
 }
