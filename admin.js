@@ -1,4 +1,4 @@
-// Admin JavaScript - Simplified Working Version
+// Admin JavaScript - Imgur Integration Version
 document.addEventListener('DOMContentLoaded', function() {
     checkAdminAuth();
 });
@@ -63,12 +63,23 @@ function setupEventListeners() {
     // Form submission
     document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
     
-    // Google Drive conversion
-    document.getElementById('convert-drive-btn').addEventListener('click', convertGoogleDriveUrl);
+    // Imgur image testing
+    document.getElementById('test-image-btn').addEventListener('click', testImageUrl);
     
-    // Change/Remove image
-    document.getElementById('change-image').addEventListener('click', resetImageForm);
-    document.getElementById('remove-image').addEventListener('click', resetImageForm);
+    // Change/Clear image
+    document.getElementById('change-image-btn').addEventListener('click', function() {
+        resetImageForm();
+        document.getElementById('image-url').focus();
+    });
+    
+    document.getElementById('clear-image-btn').addEventListener('click', resetImageForm);
+    
+    // Auto-test when URL is pasted
+    document.getElementById('image-url').addEventListener('blur', function() {
+        if (this.value.trim().startsWith('https://i.imgur.com/')) {
+            testImageUrl();
+        }
+    });
     
     // Delete modal
     document.getElementById('cancel-delete').addEventListener('click', function() {
@@ -81,57 +92,81 @@ function setupEventListeners() {
         document.getElementById('delete-modal').style.display = 'none';
         loadAdminProducts();
     });
+    
+    // Help modal tabs
+    document.querySelectorAll('.tab-button').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // Update active tab
+            document.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Show correct content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId + '-tab').classList.add('active');
+        });
+    });
 }
 
-function convertGoogleDriveUrl() {
-    const driveLink = document.getElementById('drive-link').value.trim();
-    const driveStatus = document.getElementById('drive-status');
+function testImageUrl() {
+    const imageUrl = document.getElementById('image-url').value.trim();
+    const previewContainer = document.getElementById('image-preview-container');
+    const previewStatus = document.getElementById('preview-status');
+    const imagePreview = document.getElementById('image-preview');
+    const urlStatus = document.getElementById('url-status');
     
-    if (!driveLink) {
-        showDriveStatus('Please enter a Google Drive link', 'error');
+    if (!imageUrl) {
+        urlStatus.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Please enter URL</span>';
         return;
     }
     
-    showDriveStatus('Converting...', 'loading');
-    
-    // Extract file ID
-    let fileId = extractGoogleDriveFileId(driveLink);
-    
-    if (!fileId) {
-        showDriveStatus('Invalid link format', 'error');
+    // Validate Imgur URL format
+    if (!imageUrl.startsWith('https://i.imgur.com/')) {
+        urlStatus.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Must be i.imgur.com URL</span>';
+        previewStatus.className = 'preview-error';
+        previewStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Invalid URL format';
+        previewContainer.style.display = 'block';
+        imagePreview.style.display = 'none';
         return;
     }
     
-    // Create direct image URL
-    const directImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    urlStatus.innerHTML = '<span style="color: #ffc107;"><i class="fas fa-spinner fa-spin"></i> Testing...</span>';
+    previewContainer.style.display = 'block';
+    previewStatus.className = 'preview-loading';
+    previewStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading image...';
+    imagePreview.style.display = 'none';
     
-    // Update form
-    document.getElementById('product-image-data').value = directImageUrl;
-    document.getElementById('drive-preview-image').src = directImageUrl;
-    document.getElementById('drive-preview-container').style.display = 'block';
+    // Test if image loads
+    const img = new Image();
     
-    showDriveStatus('✅ Image ready!', 'success');
-}
-
-function extractGoogleDriveFileId(url) {
-    const patterns = [
-        /\/file\/d\/([a-zA-Z0-9_-]+)/,
-        /\/d\/([a-zA-Z0-9_-]+)/,
-        /id=([a-zA-Z0-9_-]+)/
-    ];
+    img.onload = function() {
+        // Success - image loaded
+        urlStatus.innerHTML = '<span class="imgur-success"><i class="fas fa-check-circle"></i> Valid Imgur URL</span>';
+        previewStatus.className = 'preview-success';
+        previewStatus.innerHTML = '<i class="fas fa-check-circle"></i> Image loaded successfully!';
+        imagePreview.src = imageUrl;
+        imagePreview.style.display = 'block';
+        imagePreview.style.maxWidth = '100%';
+        imagePreview.style.maxHeight = '300px';
+        imagePreview.style.borderRadius = '5px';
+        
+        // Store the validated URL
+        document.getElementById('product-image-data').value = imageUrl;
+    };
     
-    for (let pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) return match[1];
-    }
-    return null;
-}
-
-function showDriveStatus(message, type) {
-    const driveStatus = document.getElementById('drive-status');
-    driveStatus.innerHTML = message;
-    driveStatus.className = `drive-status status-${type}`;
-    driveStatus.style.display = 'block';
+    img.onerror = function() {
+        // Failed to load
+        urlStatus.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Failed to load</span>';
+        previewStatus.className = 'preview-error';
+        previewStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Image failed to load. Check the URL.';
+        imagePreview.style.display = 'none';
+        document.getElementById('product-image-data').value = '';
+    };
+    
+    img.src = imageUrl;
 }
 
 function openProductModal(productId = null) {
@@ -156,16 +191,18 @@ function openProductModal(productId = null) {
 
 function resetProductForm() {
     document.getElementById('product-form').reset();
-    document.getElementById('drive-preview-container').style.display = 'none';
+    document.getElementById('image-preview-container').style.display = 'none';
     document.getElementById('product-image-data').value = '';
-    document.getElementById('drive-status').style.display = 'none';
+    document.getElementById('url-status').innerHTML = '';
+    document.getElementById('image-preview').src = '';
+    document.getElementById('image-preview').style.display = 'none';
 }
 
 function resetImageForm() {
-    document.getElementById('drive-preview-container').style.display = 'none';
+    document.getElementById('image-url').value = '';
     document.getElementById('product-image-data').value = '';
-    document.getElementById('drive-status').style.display = 'none';
-    document.getElementById('drive-link').value = '';
+    document.getElementById('image-preview-container').style.display = 'none';
+    document.getElementById('url-status').innerHTML = '';
 }
 
 function loadProductData(productId) {
@@ -181,12 +218,24 @@ function loadProductData(productId) {
     document.getElementById('product-category').value = product.category || '';
     document.getElementById('product-stock').value = product.stock || 1;
     
-    // Handle image
+    // Handle image - auto-test if it's an Imgur URL
     const imageData = product.image || '';
     if (imageData) {
-        document.getElementById('product-image-data').value = imageData;
-        document.getElementById('drive-preview-image').src = imageData;
-        document.getElementById('drive-preview-container').style.display = 'block';
+        document.getElementById('image-url').value = imageData;
+        
+        // Auto-test if it's an Imgur URL
+        if (imageData.startsWith('https://i.imgur.com/')) {
+            setTimeout(() => {
+                testImageUrl();
+            }, 300);
+        } else {
+            document.getElementById('product-image-data').value = imageData;
+            document.getElementById('image-preview').src = imageData;
+            document.getElementById('image-preview-container').style.display = 'block';
+            document.getElementById('preview-status').className = 'preview-success';
+            document.getElementById('preview-status').innerHTML = '<i class="fas fa-check-circle"></i> Using existing image';
+            document.getElementById('image-preview').style.display = 'block';
+        }
     }
 }
 
@@ -204,6 +253,12 @@ function handleProductSubmit(e) {
     // Validation
     if (!name || !description || !price || price <= 0 || !category || !imageData) {
         alert('Please fill all required fields correctly');
+        return;
+    }
+    
+    // Additional image validation
+    if (!imageData.startsWith('http')) {
+        alert('Please provide a valid image URL');
         return;
     }
     
@@ -228,7 +283,7 @@ function handleProductSubmit(e) {
         // Add new
         const newId = addProduct(productData);
         success = !!newId;
-        alert(success ? 'Product added!' : 'Add failed');
+        alert(success ? 'Product added successfully!' : 'Failed to add product');
     }
     
     if (success) {
@@ -270,9 +325,14 @@ function loadAdminProducts() {
         const productCard = document.createElement('div');
         productCard.className = 'admin-product-card';
         
+        // Check if image is from Imgur
+        const isImgur = product.image.includes('i.imgur.com');
+        const imgurBadge = isImgur ? '<span class="imgur-badge" style="font-size:10px; padding:2px 8px;"><i class="fab fa-imdb"></i> Imgur</span>' : '';
+        
         productCard.innerHTML = `
             <div class="admin-product-image">
-                <img src="${product.image}" alt="${product.name}">
+                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Loading'">
+                ${imgurBadge}
             </div>
             <div class="admin-product-info">
                 <h3>${product.name}</h3>
@@ -315,4 +375,34 @@ function loadAdminProducts() {
 function confirmDeleteProduct(productId) {
     document.getElementById('confirm-delete').setAttribute('data-product-id', productId);
     document.getElementById('delete-modal').style.display = 'block';
+}
+
+// Product management functions (from products.js)
+function addProduct(productData) {
+    const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+    const newId = Date.now();
+    productData.id = newId;
+    productData.rating = productData.rating || Math.floor(Math.random() * 3) + 3; // Random rating 3-5
+    products.push(productData);
+    localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+    return newId;
+}
+
+function updateProduct(productId, updatedData) {
+    const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+    const index = products.findIndex(p => p.id === productId);
+    
+    if (index !== -1) {
+        products[index] = { ...products[index], ...updatedData, id: productId };
+        localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+        return true;
+    }
+    return false;
+}
+
+function deleteProduct(productId) {
+    const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+    const filteredProducts = products.filter(p => p.id !== productId);
+    localStorage.setItem('shopEasyProducts', JSON.stringify(filteredProducts));
+    return true;
 }
