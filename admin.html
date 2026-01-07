@@ -96,6 +96,12 @@
             border-left: 3px solid #1bb76e;
         }
         
+        .url-example code {
+            display: block;
+            margin: 5px 0;
+            padding: 3px;
+        }
+        
         .test-button {
             background: #6c757d;
             color: white;
@@ -104,11 +110,36 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
-            margin-top: 10px;
+            margin-left: 5px;
         }
         
         .test-button:hover {
             background: #5a6268;
+        }
+        
+        .fix-button {
+            background: #6f42c1;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+        
+        .fix-button:hover {
+            background: #5a32a3;
+        }
+        
+        .input-with-button {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .input-with-button input {
+            flex: 1;
         }
         
         .image-preview-container {
@@ -133,6 +164,30 @@
         .preview-error {
             color: #dc3545;
             font-weight: 600;
+        }
+        
+        .url-types {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        .url-type-badge {
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .url-type-badge:hover {
+            background: #dee2e6;
+        }
+        
+        .url-type-badge.active {
+            background: #1bb76e;
+            color: white;
         }
     </style>
 </head>
@@ -213,11 +268,11 @@
                 <!-- Hidden product ID -->
                 <input type="hidden" id="product-id" value="">
                 
-                <!-- Product Image Upload - IMGUR ONLY -->
+                <!-- Product Image Upload - IMGUR WITH AUTO-CONVERSION -->
                 <div class="form-section">
                     <h3><i class="fas fa-image"></i> Product Image 
                         <span class="imgur-badge">
-                            <i class="fab fa-imdb"></i> Imgur
+                            <i class="fab fa-imdb"></i> Imgur (Auto-Convert)
                         </span>
                         <button type="button" id="quick-imgur-btn" class="help-button">
                             <i class="fas fa-external-link-alt"></i> Open Imgur
@@ -225,41 +280,53 @@
                     </h3>
                     
                     <div class="instructions-card">
-                        <h4><i class="fas fa-info-circle"></i> How to Get Imgur Image URLs:</h4>
-                        <ol>
-                            <li>Go to <a href="https://imgur.com/upload" target="_blank" id="imgur-link">imgur.com/upload</a></li>
-                            <li>Drag & drop your image or click to upload</li>
-                            <li>After upload, <strong>right-click</strong> the image</li>
-                            <li>Select <strong>"Copy image address"</strong></li>
-                            <li>Paste the URL in the field below</li>
-                        </ol>
+                        <h4><i class="fas fa-info-circle"></i> Smart Imgur URL Converter:</h4>
+                        <p>Enter <strong>ANY</strong> Imgur URL - we'll automatically convert it to work on your store!</p>
+                        
+                        <div class="url-types">
+                            <div class="url-type-badge active" data-url-type="gallery">Gallery URL</div>
+                            <div class="url-type-badge" data-url-type="direct">Direct URL</div>
+                            <div class="url-type-badge" data-url-type="gallery-with-gallery">Gallery with /gallery</div>
+                        </div>
+                        
                         <div class="url-example">
-                            Correct format: <strong>https://i.imgur.com/abc123.jpg</strong><br>
-                            <span style="color: #666;">(NOT https://imgur.com/gallery/...)</span>
+                            <strong>We Accept:</strong>
+                            <code>https://imgur.com/yklqXIF</code>
+                            <code>https://imgur.com/gallery/yklqXIF</code>
+                            <code>https://i.imgur.com/yklqXIF.jpg</code>
+                            <em>All will auto-convert to: https://i.imgur.com/yklqXIF.jpg</em>
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label for="image-url">
-                            <i class="fas fa-link"></i> Imgur Image URL *
+                            <i class="fas fa-link"></i> Imgur URL (Any Format) *
                             <span id="url-status" style="margin-left: 10px;"></span>
                         </label>
                         <div class="input-with-button">
                             <input type="url" id="image-url" 
-                                   placeholder="https://i.imgur.com/abc123.jpg"
+                                   placeholder="Paste ANY Imgur URL (gallery or direct)"
                                    class="url-input" required>
+                            <button type="button" id="fix-imgur-btn" class="fix-button" title="Convert to direct image URL">
+                                <i class="fas fa-magic"></i> Convert
+                            </button>
                             <button type="button" id="test-image-btn" class="test-button">
-                                <i class="fas fa-check"></i> Test URL
+                                <i class="fas fa-check"></i> Test
                             </button>
                         </div>
-                        <small>Make sure it starts with <code>https://i.imgur.com/</code></small>
+                        <small>Paste gallery link (imgur.com/abc) or direct link (i.imgur.com/abc.jpg)</small>
+                    </div>
+                    
+                    <!-- Conversion Status -->
+                    <div id="conversion-status" style="margin: 10px 0; padding: 10px; border-radius: 5px; display: none;">
+                        <i class="fas fa-sync-alt fa-spin"></i> <span id="conversion-text">Converting URL...</span>
                     </div>
                     
                     <!-- Image Preview -->
                     <div class="image-preview-container" id="image-preview-container" style="display: none;">
                         <h4><i class="fas fa-eye"></i> Image Preview</h4>
                         <div id="preview-status" class="preview-loading">Loading preview...</div>
-                        <img id="image-preview" src="" alt="Image Preview" style="max-width: 300px; margin: 15px 0; display: none;">
+                        <img id="image-preview" src="" alt="Image Preview" style="max-width: 300px; margin: 15px 0; display: none; border-radius: 5px;">
                         <div id="preview-actions" style="margin-top: 15px;">
                             <button type="button" id="change-image-btn" class="btn-secondary">
                                 <i class="fas fa-sync-alt"></i> Change Image
@@ -347,51 +414,55 @@
             <h2><i class="fas fa-question-circle"></i> How to Add Images to Your Store</h2>
             
             <div class="tabs">
-                <button class="tab-button active" data-tab="imgur">Imgur Method (Recommended)</button>
-                <button class="tab-button" data-tab="alternative">Alternative Hosts</button>
-                <button class="tab-button" data-tab="troubleshoot">Troubleshooting</button>
+                <button class="tab-button active" data-tab="imgur">Smart Imgur Uploader</button>
+                <button class="tab-button" data-tab="alternative">Other Methods</button>
             </div>
             
             <div class="tab-content active" id="imgur-tab">
-                <h3><i class="fab fa-imdb"></i> Using Imgur - Always Works!</h3>
+                <h3><i class="fab fa-imdb"></i> Smart Imgur Uploader - Easiest Method!</h3>
+                
+                <div class="smart-features">
+                    <h4><i class="fas fa-star"></i> Features:</h4>
+                    <ul>
+                        <li><i class="fas fa-check-circle imgur-success"></i> <strong>Auto-converts</strong> any Imgur URL</li>
+                        <li><i class="fas fa-check-circle imgur-success"></i> Works with <strong>gallery links</strong></li>
+                        <li><i class="fas fa-check-circle imgur-success"></i> Works with <strong>direct links</strong></li>
+                        <li><i class="fas fa-check-circle imgur-success"></i> <strong>One-click conversion</strong></li>
+                        <li><i class="fas fa-check-circle imgur-success"></i> <strong>Live preview</strong> before saving</li>
+                    </ul>
+                </div>
+                
                 <div class="step-by-step">
                     <div class="step">
                         <div class="step-number">1</div>
                         <div class="step-content">
-                            <h4>Go to Imgur</h4>
-                            <p>Click this button to open Imgur upload page:</p>
-                            <a href="https://imgur.com/upload" target="_blank" class="btn-primary">
+                            <h4>Upload to Imgur</h4>
+                            <button onclick="window.open('https://imgur.com/upload', '_blank')" class="btn-primary">
                                 <i class="fas fa-external-link-alt"></i> Open Imgur Upload
-                            </a>
+                            </button>
+                            <p>Drag & drop or click to upload</p>
                         </div>
                     </div>
                     
                     <div class="step">
                         <div class="step-number">2</div>
                         <div class="step-content">
-                            <h4>Upload Your Image</h4>
-                            <p>Drag & drop your product photo, or click to select from computer.</p>
-                            <img src="https://i.imgur.com/hBZvB3k.png" alt="Upload example" style="max-width: 300px; border: 1px solid #ddd; border-radius: 5px; margin: 10px 0;">
+                            <h4>Copy ANY Imgur URL</h4>
+                            <p>After upload, copy <strong>ANY</strong> of these:</p>
+                            <div class="url-example">
+                                <code>https://imgur.com/yklqXIF</code>
+                                <code>https://imgur.com/gallery/yklqXIF</code>
+                                <code>Right-click → "Copy image address"</code>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="step">
                         <div class="step-number">3</div>
                         <div class="step-content">
-                            <h4>Copy Image Address</h4>
-                            <p>After upload, <strong>right-click</strong> the image and select <strong>"Copy image address"</strong>.</p>
-                            <div class="url-example">
-                                <strong>Correct URL format:</strong><br>
-                                <code>https://i.imgur.com/abc123.jpg</code>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="step">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <h4>Paste in Admin Panel</h4>
-                            <p>Paste the copied URL into the "Imgur Image URL" field and click "Test URL".</p>
+                            <h4>Paste & Convert</h4>
+                            <p>Paste in the field and click <strong>"Convert"</strong> button</p>
+                            <p><em>Or just paste and wait - it auto-converts!</em></p>
                         </div>
                     </div>
                 </div>
@@ -419,9 +490,9 @@
         <div class="container">
             <p>&copy; 2023 ShopEasy Admin Panel</p>
             <p class="security-note">
-                <i class="fas fa-shield-alt"></i> Secure Admin Access • 
+                <i class="fas fa-shield-alt"></i> Secure Admin • 
                 <i class="fas fa-database"></i> Local Storage • 
-                <i class="fas fa-images"></i> Imgur Integration • 
+                <i class="fas fa-magic"></i> Auto-Convert Imgur • 
                 <i class="fas fa-mobile-alt"></i> Mobile-Friendly
             </p>
         </div>
@@ -431,11 +502,36 @@
     <script src="products.js"></script>
     <script src="admin.js"></script>
     
-    <!-- EMERGENCY FIX SCRIPT -->
+    <!-- QUICK JS FOR DEMO -->
     <script>
-        // Quick fix for Imgur button
+        // Quick setup for URL type badges
         document.addEventListener('DOMContentLoaded', function() {
-            // Open Imgur in new tab
+            // URL type badges click
+            document.querySelectorAll('.url-type-badge').forEach(badge => {
+                badge.addEventListener('click', function() {
+                    document.querySelectorAll('.url-type-badge').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const type = this.getAttribute('data-url-type');
+                    let exampleUrl = '';
+                    
+                    switch(type) {
+                        case 'gallery':
+                            exampleUrl = 'https://imgur.com/yklqXIF';
+                            break;
+                        case 'direct':
+                            exampleUrl = 'https://i.imgur.com/yklqXIF.jpg';
+                            break;
+                        case 'gallery-with-gallery':
+                            exampleUrl = 'https://imgur.com/gallery/yklqXIF';
+                            break;
+                    }
+                    
+                    document.getElementById('image-url').placeholder = `e.g., ${exampleUrl}`;
+                });
+            });
+            
+            // Open Imgur
             document.getElementById('quick-imgur-btn')?.addEventListener('click', function() {
                 window.open('https://imgur.com/upload', '_blank');
             });
