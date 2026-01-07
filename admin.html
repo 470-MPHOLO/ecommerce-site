@@ -111,64 +111,55 @@
                 <!-- CRITICAL FIX: Empty product ID for new products -->
                 <input type="hidden" id="product-id" value="">
                 
-                <!-- Product Image Upload - Google Drive Only -->
-                <div class="form-section">
-                    <h3><i class="fas fa-image"></i> Product Image (Google Drive)</h3>
-                    
-                    <div class="drive-instructions">
-                        <div class="instruction-card">
-                            <h4><i class="fab fa-google-drive"></i> How to Add Images</h4>
-                            <ol>
-                                <li>Upload image to <a href="https://drive.google.com" target="_blank">Google Drive</a></li>
-                                <li>Right-click file → <strong>"Get link"</strong></li>
-                                <li>Set to <strong>"Anyone with the link"</strong> → Copy link</li>
-                                <li>Paste below → Click <strong>"Convert & Preview"</strong></li>
-                            </ol>
-                        </div>
-                        
-                        <div class="drive-input-section">
-                            <div class="form-group">
-                                <label for="drive-link">
-                                    <i class="fas fa-link"></i> Google Drive Link *
-                                </label>
-                                <div class="drive-input-group">
-                                    <input type="url" id="drive-link" 
-                                           placeholder="https://drive.google.com/file/d/.../view"
-                                           class="drive-url-input" required>
-                                    <button type="button" id="convert-drive-btn" class="btn-primary">
-                                        <i class="fas fa-exchange-alt"></i> Convert & Preview
-                                    </button>
-                                </div>
-                                <small class="drive-example">
-                                    Example: <code>https://drive.google.com/file/d/abc123xyz/view</code>
-                                </small>
-                            </div>
-                            
-                            <div class="drive-status" id="drive-status"></div>
-                            
-                            <div class="drive-preview-container" id="drive-preview-container" style="display: none;">
-                                <div class="preview-header">
-                                    <h4>Image Preview</h4>
-                                    <span class="drive-badge">
-                                        <i class="fab fa-google-drive"></i> Google Drive
-                                    </span>
-                                </div>
-                                <img id="drive-preview-image" class="preview-image" src="" alt="Preview">
-                                <div class="preview-actions">
-                                    <button type="button" id="change-image" class="btn-secondary">
-                                        <i class="fas fa-sync-alt"></i> Change Image
-                                    </button>
-                                    <button type="button" id="remove-image" class="btn-delete">
-                                        <i class="fas fa-trash"></i> Remove
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Hidden field to store converted Google Drive URL -->
-                    <input type="hidden" id="product-image-data" required>
+               <div class="form-section">
+    <h3><i class="fas fa-image"></i> Product Image</h3>
+    
+    <div class="drive-instructions">
+        <div class="instruction-card">
+            <h4><i class="fas fa-cloud-upload-alt"></i> How to Add Images</h4>
+            <ol>
+                <li>Go to <a href="https://imgur.com/upload" target="_blank">Imgur Upload</a></li>
+                <li>Drag & drop your image</li>
+                <li>Right-click uploaded image → <strong>"Copy image address"</strong></li>
+                <li>Paste the URL below</li>
+            </ol>
+            <p class="note"><strong>Note:</strong> Imgur links look like: <code>https://i.imgur.com/abc123.jpg</code></p>
+        </div>
+        
+        <div class="drive-input-section">
+            <div class="form-group">
+                <label for="image-url">
+                    <i class="fas fa-link"></i> Image URL *
+                </label>
+                <input type="url" id="image-url" 
+                       placeholder="https://i.imgur.com/abc123.jpg"
+                       class="drive-url-input" required>
+                <button type="button" id="preview-image-btn" class="btn-primary">
+                    <i class="fas fa-eye"></i> Preview Image
+                </button>
+            </div>
+            
+            <div class="drive-preview-container" id="drive-preview-container" style="display: none;">
+                <div class="preview-header">
+                    <h4>Image Preview</h4>
+                    <span class="drive-badge">
+                        <i class="fas fa-check-circle"></i> Ready
+                    </span>
                 </div>
+                <img id="drive-preview-image" class="preview-image" src="" alt="Preview">
+                <div class="preview-actions">
+                    <button type="button" id="change-image" class="btn-secondary">
+                        <i class="fas fa-sync-alt"></i> Change Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+                    
+                    <!-- Hidden field to store image URL -->
+    <input type="hidden" id="product-image-data" required>
+</div>
                 
                 <!-- Product Details -->
                 <div class="form-section">
