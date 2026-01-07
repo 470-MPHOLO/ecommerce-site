@@ -5,547 +5,541 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - ShopEasy</title>
     <link rel="stylesheet" href="admin-styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Ensure product ID is properly handled */
-        #product-id {
-            display: none !important;
-        }
+        /* Minimal inline styles - just essentials */
+        #product-id { display: none; }
         
-        /* Modal fixes */
         .modal {
             display: none;
             position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
             z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
         }
         
         .modal-content {
-            background-color: #fff;
+            background: white;
             margin: 50px auto;
-            padding: 30px;
+            padding: 20px;
             border-radius: 10px;
             width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
+            max-width: 700px;
+            max-height: 80vh;
             overflow-y: auto;
         }
         
-        /* Imgur-specific styles */
-        .imgur-badge {
-            background: linear-gradient(135deg, #1bb76e, #0a8043);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .imgur-success {
-            color: #1bb76e;
-            font-weight: 600;
-        }
-        
-        .help-button {
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            padding: 5px 15px;
-            font-size: 14px;
+        .close-modal {
+            float: right;
+            font-size: 24px;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            margin-left: 10px;
-        }
-        
-        .help-button:hover {
-            background: #e9ecef;
-        }
-        
-        .instructions-card {
-            background: #f0f9ff;
-            border-left: 4px solid #1bb76e;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        
-        .instructions-card ol {
-            margin: 10px 0 10px 20px;
-        }
-        
-        .instructions-card li {
-            margin-bottom: 8px;
-        }
-        
-        .url-example {
-            background: #f5f5f5;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 13px;
-            margin: 10px 0;
-            border-left: 3px solid #1bb76e;
-        }
-        
-        .url-example code {
-            display: block;
-            margin: 5px 0;
-            padding: 3px;
-        }
-        
-        .test-button {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-left: 5px;
-        }
-        
-        .test-button:hover {
-            background: #5a6268;
-        }
-        
-        .fix-button {
-            background: #6f42c1;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-left: 5px;
-        }
-        
-        .fix-button:hover {
-            background: #5a32a3;
         }
         
         .input-with-button {
             display: flex;
             gap: 10px;
-            margin-bottom: 10px;
+            margin: 10px 0;
         }
         
         .input-with-button input {
             flex: 1;
+            padding: 8px;
         }
         
-        .image-preview-container {
-            margin-top: 20px;
-            border: 2px dashed #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            background: #fafafa;
-        }
-        
-        .preview-loading {
-            color: #6c757d;
-            font-style: italic;
-        }
-        
-        .preview-success {
-            color: #1bb76e;
-            font-weight: 600;
-        }
-        
-        .preview-error {
-            color: #dc3545;
-            font-weight: 600;
-        }
-        
-        .url-types {
-            display: flex;
-            gap: 10px;
-            margin: 10px 0;
-            flex-wrap: wrap;
-        }
-        
-        .url-type-badge {
-            background: #e9ecef;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
+        .btn-primary, .btn-secondary, .test-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
         }
         
-        .url-type-badge:hover {
-            background: #dee2e6;
+        .btn-primary { background: #4CAF50; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .test-button { background: #007bff; color: white; }
+        
+        .preview-container {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
         }
         
-        .url-type-badge.active {
-            background: #1bb76e;
-            color: white;
+        #image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
-    <!-- Auth Check -->
-    <div id="admin-auth-check">
-        <div class="auth-modal">
-            <div class="auth-content">
-                <h2>Admin Login Required</h2>
-                <p>Enter password to access admin panel</p>
-                <input type="password" id="auth-password" placeholder="Admin password">
-                <button id="auth-submit">Login</button>
-                <p id="auth-error" class="error"></p>
-                <p><a href="index.html">← Back to Store</a></p>
-            </div>
+    <!-- Simple Auth -->
+    <div id="auth-check" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; align-items:center; justify-content:center;">
+        <div style="text-align:center; padding: 40px; border: 1px solid #ddd; border-radius:10px;">
+            <h2>Admin Login</h2>
+            <input type="password" id="admin-password" placeholder="Enter password" style="padding:10px; margin:10px; width:200px;">
+            <br>
+            <button onclick="checkAuth()" style="padding:10px 20px; background:#4CAF50; color:white; border:none; border-radius:5px;">Login</button>
+            <p id="auth-error" style="color:red; margin-top:10px;"></p>
         </div>
     </div>
 
     <!-- Admin Header -->
-    <header class="admin-header">
-        <div class="container">
-            <div class="admin-logo">
-                <h1><i class="fas fa-cogs"></i> ShopEasy Admin</h1>
-                <p class="admin-subtitle">Product Management</p>
+    <header style="background: #2c3e50; color: white; padding: 15px 0;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="margin: 0;">ShopEasy Admin</h1>
+                <p style="margin: 5px 0 0 0; opacity: 0.8;">Product Management</p>
             </div>
-            <nav class="admin-nav">
-                <button id="add-product-btn" class="btn-primary" type="button">
-                    <i class="fas fa-plus"></i> Add Product
+            <nav>
+                <button id="add-product-btn" style="background: #4CAF50; color: white; padding: 8px 16px; border: none; border-radius: 5px; margin-right: 10px;">
+                    + Add Product
                 </button>
-                <button id="help-btn" class="help-button" type="button">
-                    <i class="fas fa-question-circle"></i> How to Add Images
-                </button>
-                <a href="index.html" class="admin-nav-link">
-                    <i class="fas fa-store"></i> View Store
-                </a>
-                <button id="logout-admin" class="logout-btn" type="button">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+                <a href="index.html" style="color: white; text-decoration: none; margin-right: 10px;">View Store</a>
+                <button id="logout-btn" style="background: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 5px;">
+                    Logout
                 </button>
             </nav>
         </div>
     </header>
 
-    <main class="admin-container">
-        <!-- Products Management -->
-        <section id="products-management">
-            <div class="section-header">
-                <h2><i class="fas fa-boxes"></i> Manage Products</h2>
-                <div class="stats">
-                    <span class="stat"><i class="fas fa-box"></i> <span id="product-count">0</span> Products</span>
-                    <span class="stat"><i class="fas fa-layer-group"></i> <span id="category-count">6</span> Categories</span>
-                </div>
+    <!-- Main Content -->
+    <main style="max-width: 1200px; margin: 20px auto; padding: 0 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Manage Products</h2>
+            <div>
+                <span style="background: #f8f9fa; padding: 5px 10px; border-radius: 5px; margin-right: 10px;">
+                    Products: <span id="product-count">0</span>
+                </span>
+                <span style="background: #f8f9fa; padding: 5px 10px; border-radius: 5px;">
+                    Categories: <span id="category-count">0</span>
+                </span>
             </div>
-            
-            <!-- Products Grid -->
-            <div class="products-grid" id="admin-products-grid">
-                <!-- Products loaded here -->
-            </div>
-            
-            <!-- Empty State -->
-            <div id="empty-state" class="empty-state">
-                <i class="fas fa-box-open"></i>
-                <h3>No Products Yet</h3>
-                <p>Click "Add Product" to start adding products to your store</p>
-                <button id="add-first-product" class="btn-primary" type="button">
-                    <i class="fas fa-plus"></i> Add Your First Product
-                </button>
-            </div>
-        </section>
+        </div>
+
+        <!-- Products Grid -->
+        <div id="products-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            <!-- Products loaded via JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" style="text-align: center; padding: 60px 20px; display: none;">
+            <div style="font-size: 48px; color: #ddd; margin-bottom: 20px;">📦</div>
+            <h3>No Products Yet</h3>
+            <p>Start by adding your first product</p>
+            <button id="add-first-btn" style="background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin-top: 20px;">
+                + Add First Product
+            </button>
+        </div>
     </main>
 
     <!-- Product Modal -->
     <div id="product-modal" class="modal">
         <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2 id="modal-title"><i class="fas fa-plus-circle"></i> Add New Product</h2>
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title">Add New Product</h2>
             
-            <form id="product-form">
-                <!-- Hidden product ID -->
+            <form id="product-form" onsubmit="handleFormSubmit(event)">
                 <input type="hidden" id="product-id" value="">
                 
-                <!-- Product Image Upload - IMGUR WITH AUTO-CONVERSION -->
-                <div class="form-section">
-                    <h3><i class="fas fa-image"></i> Product Image 
-                        <span class="imgur-badge">
-                            <i class="fab fa-imdb"></i> Imgur (Auto-Convert)
-                        </span>
-                        <button type="button" id="quick-imgur-btn" class="help-button">
-                            <i class="fas fa-external-link-alt"></i> Open Imgur
-                        </button>
-                    </h3>
+                <!-- Image Section -->
+                <div style="margin-bottom: 20px;">
+                    <h3>Product Image</h3>
+                    <p style="color: #666; margin-bottom: 10px;">
+                        <strong>Use Imgur:</strong> Upload to <a href="https://imgur.com/upload" target="_blank">imgur.com/upload</a>, then copy the image address
+                    </p>
                     
-                    <div class="instructions-card">
-                        <h4><i class="fas fa-info-circle"></i> Smart Imgur URL Converter:</h4>
-                        <p>Enter <strong>ANY</strong> Imgur URL - we'll automatically convert it to work on your store!</p>
-                        
-                        <div class="url-types">
-                            <div class="url-type-badge active" data-url-type="gallery">Gallery URL</div>
-                            <div class="url-type-badge" data-url-type="direct">Direct URL</div>
-                            <div class="url-type-badge" data-url-type="gallery-with-gallery">Gallery with /gallery</div>
-                        </div>
-                        
-                        <div class="url-example">
-                            <strong>We Accept:</strong>
-                            <code>https://imgur.com/yklqXIF</code>
-                            <code>https://imgur.com/gallery/yklqXIF</code>
-                            <code>https://i.imgur.com/yklqXIF.jpg</code>
-                            <em>All will auto-convert to: https://i.imgur.com/yklqXIF.jpg</em>
+                    <div class="input-with-button">
+                        <input type="url" id="image-url" placeholder="https://i.imgur.com/abc123.jpg" required>
+                        <button type="button" onclick="testImageUrl()" class="test-button">Test URL</button>
+                    </div>
+                    <small style="color: #666;">Enter direct Imgur URL (should start with i.imgur.com)</small>
+                    
+                    <!-- Preview -->
+                    <div id="preview-container" class="preview-container" style="display: none;">
+                        <h4>Preview</h4>
+                        <div id="preview-status">Loading...</div>
+                        <img id="image-preview" src="" alt="Preview">
+                        <div style="margin-top: 10px;">
+                            <button type="button" onclick="resetImage()" style="background: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 3px; margin-right: 5px;">Change</button>
+                            <button type="button" onclick="clearImage()" style="background: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 3px;">Clear</button>
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="image-url">
-                            <i class="fas fa-link"></i> Imgur URL (Any Format) *
-                            <span id="url-status" style="margin-left: 10px;"></span>
-                        </label>
-                        <div class="input-with-button">
-                            <input type="url" id="image-url" 
-                                   placeholder="Paste ANY Imgur URL (gallery or direct)"
-                                   class="url-input" required>
-                            <button type="button" id="fix-imgur-btn" class="fix-button" title="Convert to direct image URL">
-                                <i class="fas fa-magic"></i> Convert
-                            </button>
-                            <button type="button" id="test-image-btn" class="test-button">
-                                <i class="fas fa-check"></i> Test
-                            </button>
-                        </div>
-                        <small>Paste gallery link (imgur.com/abc) or direct link (i.imgur.com/abc.jpg)</small>
-                    </div>
-                    
-                    <!-- Conversion Status -->
-                    <div id="conversion-status" style="margin: 10px 0; padding: 10px; border-radius: 5px; display: none;">
-                        <i class="fas fa-sync-alt fa-spin"></i> <span id="conversion-text">Converting URL...</span>
-                    </div>
-                    
-                    <!-- Image Preview -->
-                    <div class="image-preview-container" id="image-preview-container" style="display: none;">
-                        <h4><i class="fas fa-eye"></i> Image Preview</h4>
-                        <div id="preview-status" class="preview-loading">Loading preview...</div>
-                        <img id="image-preview" src="" alt="Image Preview" style="max-width: 300px; margin: 15px 0; display: none; border-radius: 5px;">
-                        <div id="preview-actions" style="margin-top: 15px;">
-                            <button type="button" id="change-image-btn" class="btn-secondary">
-                                <i class="fas fa-sync-alt"></i> Change Image
-                            </button>
-                            <button type="button" id="clear-image-btn" class="btn-delete">
-                                <i class="fas fa-times"></i> Clear
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Hidden field to store validated image URL -->
                     <input type="hidden" id="product-image-data" required>
                 </div>
                 
                 <!-- Product Details -->
-                <div class="form-section">
-                    <h3><i class="fas fa-info-circle"></i> Product Details</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="product-name">
-                                <i class="fas fa-tag"></i> Product Name *
-                            </label>
-                            <input type="text" id="product-name" required 
-                                   placeholder="e.g., Wireless Headphones">
+                <div style="margin-bottom: 20px;">
+                    <h3>Product Details</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label>Product Name *</label>
+                            <input type="text" id="product-name" required style="width: 100%; padding: 8px; margin-top: 5px;">
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="product-price">
-                                <i class="fas fa-money-bill-wave"></i> Price (R) *
-                            </label>
-                            <input type="number" id="product-price" step="0.01" min="0.01" required 
-                                   placeholder="e.g., 1499.99">
+                        <div>
+                            <label>Price (R) *</label>
+                            <input type="number" id="product-price" step="0.01" min="0.01" required style="width: 100%; padding: 8px; margin-top: 5px;">
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="product-description">
-                            <i class="fas fa-align-left"></i> Description *
-                        </label>
-                        <textarea id="product-description" rows="3" required 
-                                  placeholder="Describe your product..."></textarea>
+                    <div style="margin-bottom: 15px;">
+                        <label>Description *</label>
+                        <textarea id="product-description" required style="width: 100%; padding: 8px; margin-top: 5px; height: 80px;"></textarea>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="product-category">
-                            <i class="fas fa-folder"></i> Category *
-                        </label>
-                        <select id="product-category" required>
-                            <option value="">Select Category</option>
-                            <option value="electronics">Electronics</option>
-                            <option value="fashion">Fashion & Clothing</option>
-                            <option value="home">Home & Kitchen</option>
-                            <option value="books">Books & Stationery</option>
-                            <option value="sports">Sports & Outdoors</option>
-                            <option value="beauty">Beauty & Health</option>
-                            <option value="toys">Toys & Games</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="product-stock">
-                            <i class="fas fa-boxes"></i> Stock Quantity *
-                        </label>
-                        <input type="number" id="product-stock" min="1" value="1" required>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label>Category *</label>
+                            <select id="product-category" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                                <option value="">Select</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="fashion">Fashion</option>
+                                <option value="home">Home & Kitchen</option>
+                                <option value="sports">Sports</option>
+                                <option value="beauty">Beauty</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Stock Quantity *</label>
+                            <input type="number" id="product-stock" min="1" value="1" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Form Actions -->
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary close-modal-btn">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                    <button type="submit" class="btn-primary" id="save-product-btn">
-                        <i class="fas fa-save"></i> Save Product
-                    </button>
+                <div style="text-align: right; margin-top: 30px;">
+                    <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary" id="save-btn">Save Product</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Help Instructions Modal -->
-    <div id="help-modal" class="modal">
-        <div class="modal-content">
-            <h2><i class="fas fa-question-circle"></i> How to Add Images to Your Store</h2>
-            
-            <div class="tabs">
-                <button class="tab-button active" data-tab="imgur">Smart Imgur Uploader</button>
-                <button class="tab-button" data-tab="alternative">Other Methods</button>
-            </div>
-            
-            <div class="tab-content active" id="imgur-tab">
-                <h3><i class="fab fa-imdb"></i> Smart Imgur Uploader - Easiest Method!</h3>
-                
-                <div class="smart-features">
-                    <h4><i class="fas fa-star"></i> Features:</h4>
-                    <ul>
-                        <li><i class="fas fa-check-circle imgur-success"></i> <strong>Auto-converts</strong> any Imgur URL</li>
-                        <li><i class="fas fa-check-circle imgur-success"></i> Works with <strong>gallery links</strong></li>
-                        <li><i class="fas fa-check-circle imgur-success"></i> Works with <strong>direct links</strong></li>
-                        <li><i class="fas fa-check-circle imgur-success"></i> <strong>One-click conversion</strong></li>
-                        <li><i class="fas fa-check-circle imgur-success"></i> <strong>Live preview</strong> before saving</li>
-                    </ul>
-                </div>
-                
-                <div class="step-by-step">
-                    <div class="step">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h4>Upload to Imgur</h4>
-                            <button onclick="window.open('https://imgur.com/upload', '_blank')" class="btn-primary">
-                                <i class="fas fa-external-link-alt"></i> Open Imgur Upload
-                            </button>
-                            <p>Drag & drop or click to upload</p>
-                        </div>
-                    </div>
-                    
-                    <div class="step">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h4>Copy ANY Imgur URL</h4>
-                            <p>After upload, copy <strong>ANY</strong> of these:</p>
-                            <div class="url-example">
-                                <code>https://imgur.com/yklqXIF</code>
-                                <code>https://imgur.com/gallery/yklqXIF</code>
-                                <code>Right-click → "Copy image address"</code>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h4>Paste & Convert</h4>
-                            <p>Paste in the field and click <strong>"Convert"</strong> button</p>
-                            <p><em>Or just paste and wait - it auto-converts!</em></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn-primary close-help-modal">Got it!</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
+    <!-- Delete Modal -->
     <div id="delete-modal" class="modal">
-        <div class="modal-content small-modal">
-            <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
-            <p>Are you sure you want to delete this product? This action cannot be undone.</p>
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" id="cancel-delete">Cancel</button>
-                <button type="button" class="btn-delete" id="confirm-delete">Delete Product</button>
+        <div class="modal-content" style="max-width: 400px;">
+            <h3>Confirm Delete</h3>
+            <p>Are you sure you want to delete this product?</p>
+            <div style="text-align: right; margin-top: 20px;">
+                <button onclick="closeDeleteModal()" class="btn-secondary">Cancel</button>
+                <button onclick="confirmDelete()" style="background: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 5px;">Delete</button>
             </div>
         </div>
     </div>
 
-    <footer class="admin-footer">
-        <div class="container">
-            <p>&copy; 2023 ShopEasy Admin Panel</p>
-            <p class="security-note">
-                <i class="fas fa-shield-alt"></i> Secure Admin • 
-                <i class="fas fa-database"></i> Local Storage • 
-                <i class="fas fa-magic"></i> Auto-Convert Imgur • 
-                <i class="fas fa-mobile-alt"></i> Mobile-Friendly
-            </p>
-        </div>
-    </footer>
-
-    <!-- LOAD JAVASCRIPT FILES -->
-    <script src="products.js"></script>
-    <script src="admin.js"></script>
-    
-    <!-- QUICK JS FOR DEMO -->
     <script>
-        // Quick setup for URL type badges
-        document.addEventListener('DOMContentLoaded', function() {
-            // URL type badges click
-            document.querySelectorAll('.url-type-badge').forEach(badge => {
-                badge.addEventListener('click', function() {
-                    document.querySelectorAll('.url-type-badge').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    const type = this.getAttribute('data-url-type');
-                    let exampleUrl = '';
-                    
-                    switch(type) {
-                        case 'gallery':
-                            exampleUrl = 'https://imgur.com/yklqXIF';
-                            break;
-                        case 'direct':
-                            exampleUrl = 'https://i.imgur.com/yklqXIF.jpg';
-                            break;
-                        case 'gallery-with-gallery':
-                            exampleUrl = 'https://imgur.com/gallery/yklqXIF';
-                            break;
-                    }
-                    
-                    document.getElementById('image-url').placeholder = `e.g., ${exampleUrl}`;
-                });
-            });
+        // Simple authentication
+        function checkAuth() {
+            const password = document.getElementById('admin-password').value;
+            if (password === 'admin123') {
+                localStorage.setItem('adminAuth', 'true');
+                document.getElementById('auth-check').style.display = 'none';
+                initAdmin();
+            } else {
+                document.getElementById('auth-error').textContent = 'Incorrect password';
+            }
+        }
+        
+        // Check if already authenticated
+        if (localStorage.getItem('adminAuth') === 'true') {
+            document.getElementById('auth-check').style.display = 'none';
+            setTimeout(initAdmin, 100);
+        } else {
+            document.getElementById('auth-check').style.display = 'flex';
+        }
+        
+        function initAdmin() {
+            loadProducts();
+            setupEventListeners();
+        }
+        
+        function setupEventListeners() {
+            // Add product buttons
+            document.getElementById('add-product-btn').addEventListener('click', () => openModal());
+            document.getElementById('add-first-btn').addEventListener('click', () => openModal());
             
-            // Open Imgur
-            document.getElementById('quick-imgur-btn')?.addEventListener('click', function() {
-                window.open('https://imgur.com/upload', '_blank');
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                localStorage.removeItem('adminAuth');
+                location.reload();
             });
+        }
+        
+        function loadProducts() {
+            const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+            const grid = document.getElementById('products-grid');
+            const emptyState = document.getElementById('empty-state');
             
-            // Open help modal
-            document.getElementById('help-btn')?.addEventListener('click', function() {
-                document.getElementById('help-modal').style.display = 'block';
-            });
+            document.getElementById('product-count').textContent = products.length;
             
-            // Close help modal
-            document.querySelector('.close-help-modal')?.addEventListener('click', function() {
-                document.getElementById('help-modal').style.display = 'none';
+            // Count unique categories
+            const categories = [...new Set(products.map(p => p.category))];
+            document.getElementById('category-count').textContent = categories.length;
+            
+            if (products.length === 0) {
+                emptyState.style.display = 'block';
+                grid.innerHTML = '';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            grid.innerHTML = '';
+            
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.style.border = '1px solid #ddd';
+                productCard.style.borderRadius = '8px';
+                productCard.style.overflow = 'hidden';
+                productCard.style.background = 'white';
+                
+                productCard.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}" 
+                         style="width: 100%; height: 200px; object-fit: cover;"
+                         onerror="this.src='https://via.placeholder.com/300x200?text=Image+Error'">
+                    <div style="padding: 15px;">
+                        <h3 style="margin: 0 0 10px 0;">${product.name}</h3>
+                        <p style="color: #666; margin: 0 0 10px 0;">${product.description.substring(0, 60)}...</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="background: #f8f9fa; padding: 3px 8px; border-radius: 3px; font-size: 12px;">
+                                ${product.category}
+                            </span>
+                            <span style="font-weight: bold; color: #2c3e50;">
+                                R${product.price.toFixed(2)}
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="editProduct(${product.id})" 
+                                    style="flex: 1; background: #007bff; color: white; padding: 8px; border: none; border-radius: 4px;">
+                                Edit
+                            </button>
+                            <button onclick="showDeleteConfirm(${product.id})" 
+                                    style="flex: 1; background: #dc3545; color: white; padding: 8px; border: none; border-radius: 4px;">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(productCard);
             });
-        });
+        }
+        
+        function openModal(productId = null) {
+            const modal = document.getElementById('product-modal');
+            const title = document.getElementById('modal-title');
+            
+            if (productId) {
+                title.textContent = 'Edit Product';
+                document.getElementById('product-id').value = productId;
+                loadProductData(productId);
+            } else {
+                title.textContent = 'Add New Product';
+                resetForm();
+            }
+            
+            modal.style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('product-modal').style.display = 'none';
+            resetForm();
+        }
+        
+        function resetForm() {
+            document.getElementById('product-form').reset();
+            document.getElementById('preview-container').style.display = 'none';
+            document.getElementById('product-image-data').value = '';
+            document.getElementById('product-id').value = '';
+            document.getElementById('image-preview').src = '';
+        }
+        
+        function resetImage() {
+            document.getElementById('image-url').value = '';
+            document.getElementById('preview-container').style.display = 'none';
+            document.getElementById('product-image-data').value = '';
+        }
+        
+        function clearImage() {
+            resetImage();
+            document.getElementById('image-url').focus();
+        }
+        
+        function loadProductData(productId) {
+            const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+            const product = products.find(p => p.id === productId);
+            
+            if (!product) return;
+            
+            document.getElementById('product-name').value = product.name || '';
+            document.getElementById('product-description').value = product.description || '';
+            document.getElementById('product-price').value = product.price || '';
+            document.getElementById('product-category').value = product.category || '';
+            document.getElementById('product-stock').value = product.stock || 1;
+            
+            if (product.image) {
+                document.getElementById('image-url').value = product.image;
+                document.getElementById('product-image-data').value = product.image;
+                showImagePreview(product.image);
+            }
+        }
+        
+        function testImageUrl() {
+            const url = document.getElementById('image-url').value.trim();
+            if (!url) {
+                alert('Please enter an image URL');
+                return;
+            }
+            
+            // Convert Imgur gallery URLs to direct URLs
+            let directUrl = url;
+            if (url.includes('imgur.com') && !url.includes('i.imgur.com')) {
+                const match = url.match(/imgur\.com\/(?:gallery\/)?([a-zA-Z0-9]+)/);
+                if (match && match[1]) {
+                    directUrl = `https://i.imgur.com/${match[1]}.jpg`;
+                    document.getElementById('image-url').value = directUrl;
+                }
+            }
+            
+            showImagePreview(directUrl);
+        }
+        
+        function showImagePreview(url) {
+            const preview = document.getElementById('image-preview');
+            const status = document.getElementById('preview-status');
+            const container = document.getElementById('preview-container');
+            
+            container.style.display = 'block';
+            status.textContent = 'Loading image...';
+            preview.style.display = 'none';
+            
+            const img = new Image();
+            img.onload = function() {
+                preview.src = url;
+                preview.style.display = 'block';
+                status.textContent = 'Image loaded successfully!';
+                document.getElementById('product-image-data').value = url;
+            };
+            img.onerror = function() {
+                status.textContent = 'Failed to load image. Please check the URL.';
+                preview.style.display = 'none';
+                document.getElementById('product-image-data').value = '';
+            };
+            img.src = url;
+        }
+        
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const productId = document.getElementById('product-id').value;
+            const imageUrl = document.getElementById('product-image-data').value;
+            const name = document.getElementById('product-name').value.trim();
+            const description = document.getElementById('product-description').value.trim();
+            const price = parseFloat(document.getElementById('product-price').value);
+            const category = document.getElementById('product-category').value;
+            const stock = parseInt(document.getElementById('product-stock').value) || 1;
+            
+            // Validation
+            if (!name || !description || !price || price <= 0 || !category || !imageUrl) {
+                alert('Please fill all required fields correctly');
+                return;
+            }
+            
+            const productData = {
+                name,
+                description,
+                price,
+                category,
+                stock,
+                image: imageUrl,
+                rating: Math.floor(Math.random() * 3) + 3
+            };
+            
+            let success = false;
+            let message = '';
+            
+            if (productId) {
+                // Update
+                success = updateProduct(parseInt(productId), productData);
+                message = success ? 'Product updated!' : 'Update failed';
+            } else {
+                // Add new
+                const newId = addProduct(productData);
+                success = !!newId;
+                message = success ? 'Product added!' : 'Add failed';
+            }
+            
+            if (success) {
+                alert(message);
+                closeModal();
+                loadProducts();
+                // Refresh main store if function exists
+                if (typeof loadProducts === 'function') {
+                    setTimeout(() => {
+                        if (window.loadProducts) window.loadProducts();
+                    }, 100);
+                }
+            } else {
+                alert(message);
+            }
+        }
+        
+        function addProduct(productData) {
+            const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+            const newId = Date.now();
+            productData.id = newId;
+            productData.dateAdded = new Date().toISOString();
+            products.push(productData);
+            localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+            return newId;
+        }
+        
+        function updateProduct(productId, updatedData) {
+            const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+            const index = products.findIndex(p => p.id === productId);
+            
+            if (index !== -1) {
+                products[index] = { ...products[index], ...updatedData, id: productId };
+                localStorage.setItem('shopEasyProducts', JSON.stringify(products));
+                return true;
+            }
+            return false;
+        }
+        
+        let deleteProductId = null;
+        
+        function showDeleteConfirm(id) {
+            deleteProductId = id;
+            document.getElementById('delete-modal').style.display = 'block';
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').style.display = 'none';
+            deleteProductId = null;
+        }
+        
+        function confirmDelete() {
+            if (!deleteProductId) return;
+            
+            const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+            const filtered = products.filter(p => p.id !== deleteProductId);
+            localStorage.setItem('shopEasyProducts', JSON.stringify(filtered));
+            
+            closeDeleteModal();
+            loadProducts();
+            
+            // Refresh main store
+            if (typeof loadProducts === 'function') {
+                setTimeout(() => {
+                    if (window.loadProducts) window.loadProducts();
+                }, 100);
+            }
+        }
+        
+        function editProduct(id) {
+            openModal(id);
+        }
     </script>
 </body>
 </html>
