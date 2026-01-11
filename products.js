@@ -1,5 +1,37 @@
-// Products data - Google Drive URLs only
+// Products data - Supports both external URLs and local images
 let products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+
+// Check if image is base64 (locally stored)
+function isBase64Image(imgSrc) {
+    return imgSrc && imgSrc.startsWith('data:image/');
+}
+
+// Get image source with fallback
+function getImageSource(product) {
+    // If it's already base64 (local), use it directly
+    if (isBase64Image(product.image)) {
+        return product.image;
+    }
+    
+    // If it's a local path in our images folder
+    if (product.image && product.image.includes('images/')) {
+        // Use relative path for local images
+        return product.image;
+    }
+    
+    // If it's an external URL (Imgur, Postimages, etc.)
+    if (product.image && product.image.startsWith('http')) {
+        return product.image;
+    }
+    
+    // Fallback image
+    return getFallbackImage();
+}
+
+// Generate SVG fallback image
+function getFallbackImage() {
+    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmNWY1ZjUiLz48cmVjdCB4PSI1MCIgeT0iMzAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTQwIiByeD0iMTAiIGZpbGw9IiNlMGUwZTAiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjEwMCIgcj0iMzAiIGZpbGw9IiNjY2MiLz48cmVjdCB4PSIyMDAiIHk9IjgwIiB3aWR0aD0iNTAiIGhlaWdodD0iNDAiIHJ4PSI1IiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iMTUwIiB5PSIxNzAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+UHJvZHVjdCBJbWFnZTwvdGV4dD48L3N2Zz4=';
+}
 
 // Function to save products to localStorage
 function saveProducts() {
@@ -10,7 +42,7 @@ function saveProducts() {
     } catch (e) {
         console.error('Error saving products:', e);
         if (e.name === 'QuotaExceededError') {
-            alert('Storage limit reached! Please delete some products.');
+            alert('Storage limit reached! Please delete some products or use smaller images.');
         }
         return false;
     }
@@ -40,16 +72,17 @@ function loadProducts() {
         productCard.setAttribute('data-category', product.category);
         productCard.setAttribute('data-id', product.id);
         
-        // Fallback image for Google Drive errors
-        const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmNWY1ZjUiLz48cmVjdCB4PSI1MCIgeT0iMzAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMTQwIiByeD0iMTAiIGZpbGw9IiNlMGUwZTAiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjEwMCIgcj0iMzAiIGZpbGw9IiNjY2MiLz48cmVjdCB4PSIyMDAiIHk9IjgwIiB3aWR0aD0iNTAiIGhlaWdodD0iNDAiIHJ4PSI1IiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iMTUwIiB5PSIxNzAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+UHJvZHVjdCBJbWFnZTwvdGV4dD48L3N2Zz4=';
+        const imageSrc = getImageSource(product);
+        const isLocalImage = isBase64Image(product.image) || 
+                            (product.image && product.image.includes('images/'));
         
         productCard.innerHTML = `
             <div class="product-image">
-                <img src="${product.image}" alt="${product.name}" 
+                <img src="${imageSrc}" alt="${product.name}" 
                      loading="lazy"
-                     onerror="this.src='${fallbackImage}'; this.onerror=null;">
+                     onerror="this.src='${getFallbackImage()}'; this.onerror=null;">
                 ${(product.stock || 0) <= 0 ? '<div class="out-of-stock">Out of Stock</div>' : ''}
-                <div class="drive-hosted"><i class="fab fa-google-drive"></i></div>
+                ${isLocalImage ? '<div class="local-badge"><i class="fas fa-check-circle"></i> Local</div>' : ''}
             </div>
             <div class="product-info">
                 <h3 class="product-title">${product.name}</h3>
@@ -59,7 +92,9 @@ function loadProducts() {
                     <i class="fas fa-box"></i> ${product.stock || 0} in stock
                 </div>
                 <button class="add-to-cart" data-id="${product.id}" ${(product.stock || 0) <= 0 ? 'disabled' : ''}>
-                    ${(product.stock || 0) <= 0 ? '<i class="fas fa-ban"></i> Out of Stock' : '<i class="fas fa-cart-plus"></i> Add to Cart'}
+                    ${(product.stock || 0) <= 0 ? 
+                        '<i class="fas fa-ban"></i> Out of Stock' : 
+                        '<i class="fas fa-cart-plus"></i> Add to Cart'}
                 </button>
             </div>
         `;
@@ -173,4 +208,46 @@ function deleteProduct(id) {
         return true;
     }
     return false;
+}
+
+// Backup and restore functions
+function backupProducts() {
+    const products = JSON.parse(localStorage.getItem('shopEasyProducts')) || [];
+    const dataStr = JSON.stringify(products, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    const link = document.createElement('a');
+    link.href = dataUri;
+    link.download = `shopeasy-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    alert('Backup created successfully!');
+}
+
+function restoreProducts(file) {
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (Array.isArray(data)) {
+                localStorage.setItem('shopEasyProducts', JSON.stringify(data));
+                alert('Products restored successfully!');
+                location.reload();
+            } else {
+                alert('Invalid backup file format.');
+            }
+        } catch (error) {
+            alert('Error reading backup file: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Initialize products when page loads
+if (typeof loadProducts === 'function' && document.readyState === 'complete') {
+    loadProducts();
+} else {
+    document.addEventListener('DOMContentLoaded', loadProducts);
 }
