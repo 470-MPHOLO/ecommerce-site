@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - ShopEasy</title>
-    <link rel="stylesheet" href="admin-styles.css">
     <style>
         /* Minimal inline styles - just essentials */
         #product-id { display: none; }
@@ -55,7 +54,7 @@
         
         .btn-primary { background: #4CAF50; color: white; }
         .btn-secondary { background: #6c757d; color: white; }
-        .test-button { background: #007bff; color: white; }
+        .test-button { background: #25D366; color: white; }
         
         .preview-container {
             margin: 20px 0;
@@ -69,6 +68,35 @@
             max-width: 100%;
             max-height: 300px;
             margin: 10px 0;
+        }
+        
+        .postimages-btn {
+            background: #25D366;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .instructions-box {
+            background: #f8f9fa;
+            border-left: 4px solid #25D366;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .instructions-box ol {
+            margin: 10px 0 10px 20px;
+        }
+        
+        .instructions-box li {
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -142,18 +170,35 @@
             <form id="product-form" onsubmit="handleFormSubmit(event)">
                 <input type="hidden" id="product-id" value="">
                 
-                <!-- Image Section -->
+                <!-- Image Section - POSTIMAGES ONLY -->
                 <div style="margin-bottom: 20px;">
                     <h3>Product Image</h3>
-                    <p style="color: #666; margin-bottom: 10px;">
-                        <strong>Use Imgur:</strong> Upload to <a href="https://imgur.com/upload" target="_blank">imgur.com/upload</a>, then copy the image address
-                    </p>
+                    
+                    <div class="instructions-box">
+                        <h4 style="margin-top: 0; color: #25D366;">📱 Use Postimages.org (Works on ALL devices)</h4>
+                        <ol>
+                            <li>Click: <button type="button" class="postimages-btn" onclick="window.open('https://postimages.org', '_blank')">
+                                    Open Postimages.org
+                                </button>
+                            </li>
+                            <li>Upload your image (drag & drop or click)</li>
+                            <li>Copy the <strong>"Direct Link"</strong> (not "Hotlink for forums")</li>
+                            <li>Paste the URL below</li>
+                            <li>Click <strong>"Test URL"</strong> to verify</li>
+                        </ol>
+                        <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
+                            <strong>Format:</strong> <code>https://i.postimg.cc/AbCd1234/image.jpg</code>
+                        </p>
+                    </div>
                     
                     <div class="input-with-button">
-                        <input type="url" id="image-url" placeholder="https://i.imgur.com/abc123.jpg" required>
+                        <input type="url" id="image-url" 
+                               placeholder="https://i.postimg.cc/AbCd1234/image.jpg" 
+                               required
+                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
                         <button type="button" onclick="testImageUrl()" class="test-button">Test URL</button>
                     </div>
-                    <small style="color: #666;">Enter direct Imgur URL (should start with i.imgur.com)</small>
+                    <small style="color: #666;">Must be a Postimages.org direct link (contains "postimg.cc")</small>
                     
                     <!-- Preview -->
                     <div id="preview-container" class="preview-container" style="display: none;">
@@ -175,23 +220,23 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                         <div>
                             <label>Product Name *</label>
-                            <input type="text" id="product-name" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                            <input type="text" id="product-name" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px;">
                         </div>
                         <div>
                             <label>Price (R) *</label>
-                            <input type="number" id="product-price" step="0.01" min="0.01" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                            <input type="number" id="product-price" step="0.01" min="0.01" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px;">
                         </div>
                     </div>
                     
                     <div style="margin-bottom: 15px;">
                         <label>Description *</label>
-                        <textarea id="product-description" required style="width: 100%; padding: 8px; margin-top: 5px; height: 80px;"></textarea>
+                        <textarea id="product-description" required style="width: 100%; padding: 8px; margin-top: 5px; height: 80px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div>
                             <label>Category *</label>
-                            <select id="product-category" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                            <select id="product-category" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px;">
                                 <option value="">Select</option>
                                 <option value="electronics">Electronics</option>
                                 <option value="fashion">Fashion</option>
@@ -203,7 +248,7 @@
                         </div>
                         <div>
                             <label>Stock Quantity *</label>
-                            <input type="number" id="product-stock" min="1" value="1" required style="width: 100%; padding: 8px; margin-top: 5px;">
+                            <input type="number" id="product-stock" min="1" value="1" required style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px;">
                         </div>
                     </div>
                 </div>
@@ -293,8 +338,17 @@
                 productCard.style.borderRadius = '8px';
                 productCard.style.overflow = 'hidden';
                 productCard.style.background = 'white';
+                productCard.style.position = 'relative';
+                
+                // Check if image is from Postimages
+                const isPostimages = product.image && product.image.includes('postimg.cc');
+                const mobileBadge = isPostimages ? 
+                    `<div style="position: absolute; top: 10px; right: 10px; background: #25D366; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;">
+                        📱 Mobile
+                    </div>` : '';
                 
                 productCard.innerHTML = `
+                    ${mobileBadge}
                     <img src="${product.image}" alt="${product.name}" 
                          style="width: 100%; height: 200px; object-fit: cover;"
                          onerror="this.src='https://via.placeholder.com/300x200?text=Image+Error'">
@@ -357,8 +411,8 @@
         
         function resetImage() {
             document.getElementById('image-url').value = '';
-            document.getElementById('preview-container').style.display = 'none';
             document.getElementById('product-image-data').value = '';
+            document.getElementById('preview-container').style.display = 'none';
         }
         
         function clearImage() {
@@ -388,21 +442,17 @@
         function testImageUrl() {
             const url = document.getElementById('image-url').value.trim();
             if (!url) {
-                alert('Please enter an image URL');
+                alert('Please enter a Postimages URL');
                 return;
             }
             
-            // Convert Imgur gallery URLs to direct URLs
-            let directUrl = url;
-            if (url.includes('imgur.com') && !url.includes('i.imgur.com')) {
-                const match = url.match(/imgur\.com\/(?:gallery\/)?([a-zA-Z0-9]+)/);
-                if (match && match[1]) {
-                    directUrl = `https://i.imgur.com/${match[1]}.jpg`;
-                    document.getElementById('image-url').value = directUrl;
-                }
+            // Validate Postimages URL
+            if (!url.includes('postimg.cc') && !url.includes('postimages.org')) {
+                alert('❌ Please use Postimages.org only!\n\nClick the "Open Postimages.org" button for instructions.');
+                return;
             }
             
-            showImagePreview(directUrl);
+            showImagePreview(url);
         }
         
         function showImagePreview(url) {
@@ -412,17 +462,20 @@
             
             container.style.display = 'block';
             status.textContent = 'Loading image...';
+            status.style.color = '#666';
             preview.style.display = 'none';
             
             const img = new Image();
             img.onload = function() {
                 preview.src = url;
                 preview.style.display = 'block';
-                status.textContent = 'Image loaded successfully!';
+                status.textContent = '✅ Image loaded successfully!';
+                status.style.color = '#25D366';
                 document.getElementById('product-image-data').value = url;
             };
             img.onerror = function() {
-                status.textContent = 'Failed to load image. Please check the URL.';
+                status.textContent = '❌ Failed to load image. Please check the URL.';
+                status.style.color = '#dc3545';
                 preview.style.display = 'none';
                 document.getElementById('product-image-data').value = '';
             };
@@ -446,6 +499,15 @@
                 return;
             }
             
+            // Warn if not using Postimages
+            if (!imageUrl.includes('postimg.cc') && !imageUrl.includes('postimages.org')) {
+                const useAnyway = confirm('⚠️ This is not a Postimages URL. Images may not work on mobile devices.\n\nClick OK to continue anyway, or Cancel to change the URL.');
+                if (!useAnyway) {
+                    document.getElementById('image-url').focus();
+                    return;
+                }
+            }
+            
             const productData = {
                 name,
                 description,
@@ -462,12 +524,12 @@
             if (productId) {
                 // Update
                 success = updateProduct(parseInt(productId), productData);
-                message = success ? 'Product updated!' : 'Update failed';
+                message = success ? '✅ Product updated!' : '❌ Update failed';
             } else {
                 // Add new
                 const newId = addProduct(productData);
                 success = !!newId;
-                message = success ? 'Product added!' : 'Add failed';
+                message = success ? '✅ Product added!' : '❌ Failed to add product';
             }
             
             if (success) {
