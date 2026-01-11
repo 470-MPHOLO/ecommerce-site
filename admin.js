@@ -1,4 +1,4 @@
-// Admin JavaScript - Smart Imgur Auto-Conversion Version
+// Admin JavaScript - Postimages Only Version (Mobile-Friendly)
 document.addEventListener('DOMContentLoaded', function() {
     checkAdminAuth();
 });
@@ -21,7 +21,6 @@ function checkAdminAuth() {
             }
         });
         
-        // Enter key for password
         document.getElementById('auth-password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 document.getElementById('auth-submit').click();
@@ -36,7 +35,7 @@ function checkAdminAuth() {
 function initAdminPanel() {
     loadAdminProducts();
     setupEventListeners();
-    setupAutoConversion();
+    setupAutoTest();
 }
 
 function setupEventListeners() {
@@ -71,148 +70,81 @@ function setupEventListeners() {
     // Form submission
     document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
     
-    // Imgur buttons
-    document.getElementById('test-image-btn').addEventListener('click', testImageUrl);
-    document.getElementById('fix-imgur-btn').addEventListener('click', convertAndTestImageUrl);
+    // Test image button
+    document.getElementById('test-image-btn').addEventListener('click', testPostimagesUrl);
+    
+    // Open Postimages button
+    const openPostimagesBtn = document.getElementById('open-postimages-btn');
+    if (openPostimagesBtn) {
+        openPostimagesBtn.addEventListener('click', function() {
+            window.open('https://postimages.org', '_blank');
+        });
+    }
     
     // Change/Clear image
-    document.getElementById('change-image-btn').addEventListener('click', function() {
-        resetImageForm();
-        document.getElementById('image-url').focus();
-    });
+    const changeImageBtn = document.getElementById('change-image-btn');
+    if (changeImageBtn) {
+        changeImageBtn.addEventListener('click', function() {
+            resetImageForm();
+            document.getElementById('image-url').focus();
+        });
+    }
     
-    document.getElementById('clear-image-btn').addEventListener('click', resetImageForm);
+    const clearImageBtn = document.getElementById('clear-image-btn');
+    if (clearImageBtn) {
+        clearImageBtn.addEventListener('click', resetImageForm);
+    }
     
     // Delete modal
-    document.getElementById('cancel-delete').addEventListener('click', function() {
-        document.getElementById('delete-modal').style.display = 'none';
-    });
-    
-    document.getElementById('confirm-delete').addEventListener('click', function() {
-        const productId = parseInt(this.getAttribute('data-product-id'));
-        deleteProduct(productId);
-        document.getElementById('delete-modal').style.display = 'none';
-        loadAdminProducts();
-    });
-    
-    // Help modal tabs
-    document.querySelectorAll('.tab-button').forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabId = this.getAttribute('data-tab');
-            
-            // Update active tab
-            document.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Show correct content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(tabId + '-tab').classList.add('active');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', function() {
+            document.getElementById('delete-modal').style.display = 'none';
         });
-    });
+    }
+    
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function() {
+            const productId = parseInt(this.getAttribute('data-product-id'));
+            deleteProduct(productId);
+            document.getElementById('delete-modal').style.display = 'none';
+            loadAdminProducts();
+        });
+    }
 }
 
-function setupAutoConversion() {
+function setupAutoTest() {
     const imageUrlInput = document.getElementById('image-url');
     if (!imageUrlInput) return;
     
-    // Auto-detect and convert when user stops typing
+    // Auto-test when user stops typing
     let typingTimer;
     imageUrlInput.addEventListener('input', function() {
         clearTimeout(typingTimer);
         typingTimer = setTimeout(() => {
             const url = this.value.trim();
-            if (url && isImgurUrl(url) && !url.startsWith('https://i.imgur.com/')) {
-                showConversionStatus('Auto-detecting Imgur URL...', 'info');
-                setTimeout(() => {
-                    convertAndTestImageUrl();
-                }, 500);
+            if (url && isValidPostimagesUrl(url)) {
+                testPostimagesUrl();
             }
         }, 1000);
     });
     
-    // Auto-convert on blur if it's an Imgur URL
+    // Auto-test on blur
     imageUrlInput.addEventListener('blur', function() {
         const url = this.value.trim();
-        if (url && isImgurUrl(url) && !url.startsWith('https://i.imgur.com/')) {
-            convertAndTestImageUrl();
+        if (url && isValidPostimagesUrl(url)) {
+            testPostimagesUrl();
         }
     });
 }
 
-function isImgurUrl(url) {
-    return url.includes('imgur.com');
+function isValidPostimagesUrl(url) {
+    // Accept both postimg.cc and postimages.org URLs
+    return url.includes('postimg.cc') || url.includes('postimages.org');
 }
 
-function showConversionStatus(message, type) {
-    const statusDiv = document.getElementById('conversion-status');
-    const statusText = document.getElementById('conversion-text');
-    
-    if (!statusDiv || !statusText) return;
-    
-    statusText.textContent = message;
-    statusDiv.style.display = 'block';
-    
-    // Set color based on type
-    const colors = {
-        'info': '#17a2b8',
-        'success': '#1bb76e',
-        'error': '#dc3545',
-        'warning': '#ffc107'
-    };
-    
-    statusDiv.style.backgroundColor = colors[type] || colors.info;
-    statusDiv.style.color = 'white';
-}
-
-function hideConversionStatus() {
-    const statusDiv = document.getElementById('conversion-status');
-    if (statusDiv) {
-        statusDiv.style.display = 'none';
-    }
-}
-
-function convertAndTestImageUrl() {
-    let imageUrl = document.getElementById('image-url').value.trim();
-    
-    if (!imageUrl) {
-        showConversionStatus('Please enter an Imgur URL', 'error');
-        return;
-    }
-    
-    if (!isImgurUrl(imageUrl)) {
-        showConversionStatus('Not an Imgur URL. Please use Imgur for reliable images.', 'error');
-        return;
-    }
-    
-    showConversionStatus('Converting Imgur URL...', 'info');
-    
-    // Convert to direct URL
-    const directUrl = convertToDirectImgurUrl(imageUrl);
-    
-    if (directUrl === imageUrl && imageUrl.startsWith('https://i.imgur.com/')) {
-        showConversionStatus('Already a direct Imgur URL!', 'success');
-        setTimeout(() => {
-            hideConversionStatus();
-            testImageUrl();
-        }, 1000);
-        return;
-    }
-    
-    // Update the input field with converted URL
-    document.getElementById('image-url').value = directUrl;
-    
-    showConversionStatus(`Converted to: ${directUrl.split('/').pop()}`, 'success');
-    
-    // Test the converted URL
-    setTimeout(() => {
-        hideConversionStatus();
-        testImageUrl();
-    }, 1500);
-}
-
-function testImageUrl() {
+function testPostimagesUrl() {
     let imageUrl = document.getElementById('image-url').value.trim();
     const previewContainer = document.getElementById('image-preview-container');
     const previewStatus = document.getElementById('preview-status');
@@ -220,21 +152,15 @@ function testImageUrl() {
     const urlStatus = document.getElementById('url-status');
     
     if (!imageUrl) {
-        urlStatus.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Please enter URL</span>';
+        urlStatus.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Please enter Postimages URL</span>';
         return;
     }
     
-    // Auto-convert if it's an Imgur gallery URL
-    if (isImgurUrl(imageUrl) && !imageUrl.startsWith('https://i.imgur.com/')) {
-        imageUrl = convertToDirectImgurUrl(imageUrl);
-        document.getElementById('image-url').value = imageUrl;
-    }
-    
-    // Validate Imgur URL format
-    if (!imageUrl.startsWith('https://i.imgur.com/')) {
-        urlStatus.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Must be i.imgur.com URL</span>';
+    // Validate Postimages URL
+    if (!isValidPostimagesUrl(imageUrl)) {
+        urlStatus.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Must be a Postimages URL</span>';
         previewStatus.className = 'preview-error';
-        previewStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Invalid URL format';
+        previewStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Use Postimages.org only';
         previewContainer.style.display = 'block';
         imagePreview.style.display = 'none';
         return;
@@ -251,7 +177,7 @@ function testImageUrl() {
     
     img.onload = function() {
         // Success - image loaded
-        urlStatus.innerHTML = '<span class="imgur-success"><i class="fas fa-check-circle"></i> ✓ Image Ready</span>';
+        urlStatus.innerHTML = '<span style="color: #25D366;"><i class="fas fa-check-circle"></i> Postimages URL</span>';
         previewStatus.className = 'preview-success';
         previewStatus.innerHTML = '<i class="fas fa-check-circle"></i> Image loaded successfully!';
         imagePreview.src = imageUrl;
@@ -263,7 +189,7 @@ function testImageUrl() {
         // Store the validated URL
         document.getElementById('product-image-data').value = imageUrl;
         
-        // Auto-focus on next field for better UX
+        // Auto-focus on next field
         setTimeout(() => {
             if (!document.getElementById('product-name').value) {
                 document.getElementById('product-name').focus();
@@ -275,70 +201,12 @@ function testImageUrl() {
         // Failed to load
         urlStatus.innerHTML = '<span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Failed to load</span>';
         previewStatus.className = 'preview-error';
-        previewStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Image failed to load. Try a different URL.';
+        previewStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Image failed to load. Check the URL.';
         imagePreview.style.display = 'none';
         document.getElementById('product-image-data').value = '';
     };
     
     img.src = imageUrl;
-}
-
-// SMART FUNCTION: Convert any Imgur URL to direct image URL
-function convertToDirectImgurUrl(url) {
-    if (!url || typeof url !== 'string') return '';
-    
-    let directUrl = url.trim();
-    
-    // Remove query parameters and fragments
-    directUrl = directUrl.split('?')[0];
-    directUrl = directUrl.split('#')[0];
-    
-    // If it's already a direct URL, return it
-    if (directUrl.startsWith('https://i.imgur.com/')) {
-        return directUrl;
-    }
-    
-    // Extract image ID from various Imgur formats
-    let imageId = '';
-    
-    // Format 1: https://imgur.com/yklqXIF
-    const match1 = directUrl.match(/imgur\.com\/([a-zA-Z0-9]+)$/);
-    if (match1 && match1[1]) {
-        imageId = match1[1];
-    }
-    
-    // Format 2: https://imgur.com/gallery/yklqXIF
-    const match2 = directUrl.match(/imgur\.com\/gallery\/([a-zA-Z0-9]+)/);
-    if (match2 && match2[1]) {
-        imageId = match2[1];
-    }
-    
-    // Format 3: https://i.imgur.com/yklqXIF.jpg (already direct)
-    const match3 = directUrl.match(/i\.imgur\.com\/([a-zA-Z0-9]+)\.(jpg|png|gif|jpeg)/);
-    if (match3 && match3[1]) {
-        return directUrl; // Already correct format
-    }
-    
-    // Format 4: https://imgur.com/a/albumID#imageID (albums)
-    const match4 = directUrl.match(/imgur\.com\/a\/[a-zA-Z0-9]+#([a-zA-Z0-9]+)/);
-    if (match4 && match4[1]) {
-        imageId = match4[1];
-    }
-    
-    // Format 5: https://imgur.com/yklqXIF?some=param (with params)
-    const match5 = directUrl.match(/imgur\.com\/([a-zA-Z0-9]+)[\/\?#]/);
-    if (match5 && match5[1]) {
-        imageId = match5[1];
-    }
-    
-    // If we found an image ID, construct direct URL
-    if (imageId) {
-        // Try different extensions (jpg is most common)
-        return `https://i.imgur.com/${imageId}.jpg`;
-    }
-    
-    // If no pattern matched, return original
-    return directUrl;
 }
 
 function openProductModal(productId = null) {
@@ -360,7 +228,6 @@ function openProductModal(productId = null) {
     
     modal.style.display = 'block';
     
-    // Focus on image URL field
     setTimeout(() => {
         document.getElementById('image-url').focus();
     }, 300);
@@ -373,7 +240,6 @@ function resetProductForm() {
     document.getElementById('url-status').innerHTML = '';
     document.getElementById('image-preview').src = '';
     document.getElementById('image-preview').style.display = 'none';
-    hideConversionStatus();
 }
 
 function resetImageForm() {
@@ -381,7 +247,6 @@ function resetImageForm() {
     document.getElementById('product-image-data').value = '';
     document.getElementById('image-preview-container').style.display = 'none';
     document.getElementById('url-status').innerHTML = '';
-    hideConversionStatus();
 }
 
 function loadProductData(productId) {
@@ -402,13 +267,13 @@ function loadProductData(productId) {
     if (imageData) {
         document.getElementById('image-url').value = imageData;
         
-        // If it's an Imgur URL, auto-test it
-        if (imageData.includes('imgur.com')) {
+        // Auto-test if it's a Postimages URL
+        if (isValidPostimagesUrl(imageData)) {
             setTimeout(() => {
-                testImageUrl();
+                testPostimagesUrl();
             }, 500);
         } else {
-            // Non-Imgur URL, just display
+            // Non-Postimages URL, just display
             document.getElementById('product-image-data').value = imageData;
             document.getElementById('image-preview').src = imageData;
             document.getElementById('image-preview-container').style.display = 'block';
@@ -437,10 +302,13 @@ function handleProductSubmit(e) {
         return;
     }
     
-    // Additional image validation
-    if (!imageData.startsWith('http')) {
-        alert('Please provide a valid image URL');
-        return;
+    // Warn if not using Postimages
+    if (!isValidPostimagesUrl(imageData)) {
+        const usePostimages = confirm('⚠️ This is not a Postimages URL. Images may not work on mobile devices.\n\nClick OK to continue anyway, or Cancel to change the URL.');
+        if (!usePostimages) {
+            document.getElementById('image-url').focus();
+            return;
+        }
     }
     
     // Create product object
@@ -455,45 +323,27 @@ function handleProductSubmit(e) {
     };
     
     let success = false;
-    let message = '';
     
     if (productId) {
         // Update existing
         success = updateProduct(parseInt(productId), productData);
-        message = success ? '✅ Product updated successfully!' : '❌ Update failed';
+        alert(success ? '✅ Product updated successfully!' : '❌ Update failed');
     } else {
         // Add new
         const newId = addProduct(productData);
         success = !!newId;
-        message = success ? '✅ Product added successfully!' : '❌ Failed to add product';
+        alert(success ? '✅ Product added successfully!' : '❌ Failed to add product');
     }
     
     if (success) {
-        // Show success message
-        const saveBtn = document.getElementById('save-product-btn');
-        const originalText = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
-        saveBtn.style.background = '#1bb76e';
-        
-        setTimeout(() => {
-            saveBtn.innerHTML = originalText;
-            saveBtn.style.background = '';
-        }, 2000);
-        
         loadAdminProducts();
+        document.getElementById('product-modal').style.display = 'none';
+        resetProductForm();
         
-        // Close modal after delay
-        setTimeout(() => {
-            document.getElementById('product-modal').style.display = 'none';
-            resetProductForm();
-            
-            // Refresh main store
-            if (typeof loadProducts === 'function') {
-                loadProducts();
-            }
-        }, 1500);
-    } else {
-        alert(message);
+        // Refresh main store
+        if (typeof loadProducts === 'function') {
+            loadProducts();
+        }
     }
 }
 
@@ -524,16 +374,19 @@ function loadAdminProducts() {
         const productCard = document.createElement('div');
         productCard.className = 'admin-product-card';
         
-        // Check if image is from Imgur
-        const isImgur = product.image && product.image.includes('i.imgur.com');
-        const imgurBadge = isImgur ? '<span class="imgur-badge" style="font-size:10px; padding:2px 8px; position: absolute; top: 5px; right: 5px;"><i class="fab fa-imdb"></i> Imgur</span>' : '';
+        // Check if image is from Postimages
+        const isPostimages = product.image && isValidPostimagesUrl(product.image);
+        const postimagesBadge = isPostimages ? 
+            '<span class="imgur-badge" style="background: #25D366; color: white; font-size:10px; padding:2px 8px; position: absolute; top: 5px; right: 5px; border-radius: 3px;">
+                <i class="fas fa-mobile-alt"></i> Mobile-Friendly
+            </span>' : '';
         
         productCard.innerHTML = `
             <div class="admin-product-image" style="position: relative;">
                 <img src="${product.image}" alt="${product.name}" 
-                     onerror="this.src='https://via.placeholder.com/300x200?text=Image+Error'"
+                     onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Loading'"
                      style="width: 100%; height: 200px; object-fit: cover;">
-                ${imgurBadge}
+                ${postimagesBadge}
             </div>
             <div class="admin-product-info">
                 <h3>${product.name}</h3>
